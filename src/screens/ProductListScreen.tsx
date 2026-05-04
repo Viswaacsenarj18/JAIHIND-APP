@@ -1,12 +1,14 @@
 import React from "react";
 import {
-  View, Text, FlatList, StyleSheet, SafeAreaView,
+  View, Text, FlatList, StyleSheet,
   Dimensions, ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import PageHeader from "../components/PageHeader";
 import ProductCard from "../components/ProductCard";
 import { useProducts } from "../context/ProductContext";
+import { useTheme } from "../context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_TABLET = SCREEN_WIDTH >= 768;
@@ -19,29 +21,34 @@ const ProductListScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, "CategoryDetail">>();
   const categoryId = route.params?.categoryId;
   const { products, categories, loading } = useProducts();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const bg = isDark ? "#111827" : "#F8F8F8";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
 
   const category = categories.find((c) => c.id === categoryId);
   const filtered = products.filter((p) => p.category === categoryId);
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <PageHeader title={category?.name || "Products"} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#E11D48" />
-          <Text style={styles.loadingText}>Loading products...</Text>
+          <Text style={[styles.loadingText, { color: textSecondary }]}>Loading products...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <PageHeader title={category?.name || "Products"} />
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>{category?.icon || "🔍"}</Text>
-          <Text style={styles.emptyText}>No products in this category yet.</Text>
+          <Text style={[styles.emptyText, { color: textSecondary }]}>No products in this category yet.</Text>
         </View>
       ) : (
         <FlatList

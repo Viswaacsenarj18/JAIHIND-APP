@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar, Modal, Alert,
+  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Modal, Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreditCard, Banknote, Smartphone, Truck, Edit2, Trash2, Plus, Minus, X } from "lucide-react-native";
@@ -10,6 +11,7 @@ import PageHeader from "../components/PageHeader";
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrderContext";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 type RootStackParamList = {
   OrderSuccess: { orderId: string };
@@ -28,6 +30,16 @@ const CheckoutScreen = () => {
   const { items, totalPrice, updateQuantity, removeFromCart, clearCart } = useCart();
   const { placeOrder } = useOrders();
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const bg = isDark ? "#111827" : "#F8F8F8";
+  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const inputBg = isDark ? "#374151" : "#F9FAFB";
+  const inputBorder = isDark ? "#4B5563" : "#E5E7EB";
+  const borderColor = isDark ? "#374151" : "#F0F0F0";
 
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -81,33 +93,33 @@ const CheckoutScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
       <PageHeader title="Checkout" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Order Summary</Text>
-            <Text style={styles.itemCount}>{items.length} item{items.length !== 1 ? "s" : ""}</Text>
+            <Text style={[styles.cardTitle, { color: textPrimary }]}>Order Summary</Text>
+            <Text style={[styles.itemCount, { color: textSecondary }]}>{items.length} item{items.length !== 1 ? "s" : ""}</Text>
           </View>
           {items.length === 0 ? (
-            <Text style={styles.emptyCart}>Your cart is empty</Text>
+            <Text style={[styles.emptyCart, { color: textSecondary }]}>Your cart is empty</Text>
           ) : (
             items.map((item, idx) => (
               <View key={item.product.id}>
-                <View style={[styles.summaryRow, idx < items.length - 1 && styles.borderBottom]}>
+                <View style={[styles.summaryRow, idx < items.length - 1 && [styles.borderBottom, { borderBottomColor: borderColor }]]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.summaryLabel} numberOfLines={1}>{item.product.name} x{item.quantity}</Text>
-                    <Text style={styles.itemPrice}>Rs.{item.product.price.toLocaleString("en-IN")} each</Text>
+                    <Text style={[styles.summaryLabel, { color: textPrimary }]} numberOfLines={1}>{item.product.name} x{item.quantity}</Text>
+                    <Text style={[styles.itemPrice, { color: textSecondary }]}>Rs.{item.product.price.toLocaleString("en-IN")} each</Text>
                   </View>
-                  <Text style={styles.summaryValue}>Rs.{(item.product.price * item.quantity).toLocaleString("en-IN")}</Text>
+                  <Text style={[styles.summaryValue, { color: textPrimary }]}>Rs.{(item.product.price * item.quantity).toLocaleString("en-IN")}</Text>
                 </View>
                 <View style={styles.actionRow}>
-                  <TouchableOpacity style={styles.editBtn} onPress={() => handleEditItem(item)} activeOpacity={0.6}>
+                  <TouchableOpacity style={[styles.editBtn, isDark && { backgroundColor: "rgba(225,29,72,0.15)" }]} onPress={() => handleEditItem(item)} activeOpacity={0.6}>
                     <Edit2 size={14} color="#E11D48" /><Text style={styles.editBtnText}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.deleteBtn} onPress={() => removeFromCart(item.product.id)} activeOpacity={0.6}>
+                  <TouchableOpacity style={[styles.deleteBtn, isDark && { backgroundColor: "rgba(239,68,68,0.15)" }]} onPress={() => removeFromCart(item.product.id)} activeOpacity={0.6}>
                     <Trash2 size={14} color="#EF4444" /><Text style={styles.deleteBtnText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
@@ -116,13 +128,13 @@ const CheckoutScreen = () => {
           )}
           {items.length > 0 && (
             <>
-              <View style={[styles.summaryRow, styles.borderTop]}>
-                <View style={styles.deliveryLabelContainer}><Truck size={14} color="#111111" /><Text style={styles.deliveryText}>Delivery</Text></View>
-                <Text style={[styles.summaryValue, deliveryCharge === 0 && styles.free]}>{deliveryCharge === 0 ? "FREE" : `Rs.${deliveryCharge}`}</Text>
+              <View style={[styles.summaryRow, styles.borderTop, { borderTopColor: borderColor }]}>
+                <View style={styles.deliveryLabelContainer}><Truck size={14} color={textPrimary} /><Text style={[styles.deliveryText, { color: textPrimary }]}>Delivery</Text></View>
+                <Text style={[styles.summaryValue, { color: textPrimary }, deliveryCharge === 0 && styles.free]}>{deliveryCharge === 0 ? "FREE" : `Rs.${deliveryCharge}`}</Text>
               </View>
-              <View style={[styles.summaryRow, styles.borderTop, { marginTop: 8 }]}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>Rs.{grandTotal.toLocaleString("en-IN")}</Text>
+              <View style={[styles.summaryRow, styles.borderTop, { borderTopColor: borderColor, marginTop: 8 }]}>
+                <Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text>
+                <Text style={[styles.totalValue, { color: textPrimary }]}>Rs.{grandTotal.toLocaleString("en-IN")}</Text>
               </View>
             </>
           )}
@@ -130,29 +142,29 @@ const CheckoutScreen = () => {
 
         {!!error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Delivery Details</Text>
-          <Text style={styles.fieldLabel}>Full Name</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#9CA3AF" style={styles.input} />
-          <Text style={styles.fieldLabel}>Delivery Address</Text>
-          <TextInput value={address} onChangeText={setAddress} placeholder="House no, Street, Area" placeholderTextColor="#9CA3AF" multiline numberOfLines={2} style={[styles.input, styles.textarea]} textAlignVertical="top" />
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
+          <Text style={[styles.cardTitle, { color: textPrimary }]}>Delivery Details</Text>
+          <Text style={[styles.fieldLabel, { color: textSecondary }]}>FULL NAME</Text>
+          <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#9CA3AF" style={[styles.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} />
+          <Text style={[styles.fieldLabel, { color: textSecondary }]}>DELIVERY ADDRESS</Text>
+          <TextInput value={address} onChangeText={setAddress} placeholder="House no, Street, Area" placeholderTextColor="#9CA3AF" multiline numberOfLines={2} style={[styles.input, styles.textarea, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} textAlignVertical="top" />
           <View style={styles.row}>
-            <View style={{ flex: 1 }}><Text style={styles.fieldLabel}>City</Text><TextInput value={city} onChangeText={setCity} placeholder="City" placeholderTextColor="#9CA3AF" style={styles.input} /></View>
+            <View style={{ flex: 1 }}><Text style={[styles.fieldLabel, { color: textSecondary }]}>CITY</Text><TextInput value={city} onChangeText={setCity} placeholder="City" placeholderTextColor="#9CA3AF" style={[styles.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} /></View>
             <View style={{ width: 12 }} />
-            <View style={{ flex: 1 }}><Text style={styles.fieldLabel}>Pincode</Text><TextInput value={pincode} onChangeText={setPincode} placeholder="Pincode" placeholderTextColor="#9CA3AF" keyboardType="numeric" style={styles.input} /></View>
+            <View style={{ flex: 1 }}><Text style={[styles.fieldLabel, { color: textSecondary }]}>PINCODE</Text><TextInput value={pincode} onChangeText={setPincode} placeholder="Pincode" placeholderTextColor="#9CA3AF" keyboardType="numeric" style={[styles.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} /></View>
           </View>
-          <Text style={styles.fieldLabel}>Phone Number</Text>
-          <TextInput value={phone} onChangeText={setPhone} placeholder="+91 98765 43210" placeholderTextColor="#9CA3AF" keyboardType="phone-pad" style={styles.input} />
+          <Text style={[styles.fieldLabel, { color: textSecondary }]}>PHONE NUMBER</Text>
+          <TextInput value={phone} onChangeText={setPhone} placeholder="+91 98765 43210" placeholderTextColor="#9CA3AF" keyboardType="phone-pad" style={[styles.input, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Payment Method</Text>
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
+          <Text style={[styles.cardTitle, { color: textPrimary }]}>Payment Method</Text>
           {paymentMethods.map((pm) => {
             const active = paymentMethod === pm.id;
             return (
-              <TouchableOpacity key={pm.id} style={[styles.paymentBtn, active && styles.paymentBtnActive]} onPress={() => setPaymentMethod(pm.id)} activeOpacity={0.8}>
+              <TouchableOpacity key={pm.id} style={[styles.paymentBtn, { backgroundColor: isDark ? "#374151" : "#F9FAFB", borderColor: active ? "#E11D48" : (isDark ? "#4B5563" : "#E5E7EB") }, active && styles.paymentBtnActive]} onPress={() => setPaymentMethod(pm.id)} activeOpacity={0.8}>
                 <View style={[styles.paymentIcon, active && styles.paymentIconActive]}><pm.Icon size={18} color={active ? "#E11D48" : "#9CA3AF"} /></View>
-                <View><Text style={styles.paymentLabel}>{pm.label}</Text><Text style={styles.paymentDesc}>{pm.desc}</Text></View>
+                <View><Text style={[styles.paymentLabel, { color: textPrimary }]}>{pm.label}</Text><Text style={[styles.paymentDesc, { color: textSecondary }]}>{pm.desc}</Text></View>
               </TouchableOpacity>
             );
           })}

@@ -34,7 +34,8 @@ import { useProducts } from "../context/ProductContext";
 import ProductCard from "../components/ProductCard";
 import ReviewSection from "../components/ReviewSection";
 import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext"; 
+import { useWishlist } from "../context/WishlistContext";
+import { useTheme } from "../context/ThemeContext";
 
 type RootStackParamList = {
   ProductDetail: { productId: string };
@@ -59,6 +60,18 @@ const ProductDetailScreen = () => {
 
   const { products, getProductById, loading: productsLoading } = useProducts();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const bg = isDark ? "#111827" : "#FFFFFF";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const imageBg = isDark ? "#1F2937" : "#F3F4F6";
+  const featureBg = isDark ? "#1F2937" : "#EEEEEE";
+  const sizeBg = isDark ? "#1F2937" : "#FFFFFF";
+  const sizeBorder = isDark ? "#374151" : "#E5E5E5";
+  const bottomBarBg = isDark ? "#111827" : "transparent";
+  const sizeTextColor = isDark ? "#D1D5DB" : "#4B5563";
 
   // IMAGE CAROUSEL STATE
   const [activeImage, setActiveImage] = useState(0);
@@ -107,8 +120,8 @@ const ProductDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       <ScrollView>
         {/* IMAGE CAROUSEL */}
@@ -155,12 +168,8 @@ const ProductDetailScreen = () => {
                     index,
                   })}
                   renderItem={({ item }) => (
-                    <View style={{ width: SCREEN_WIDTH, height: 300, backgroundColor: '#f0f0f0' }}>
-                      <Image 
-                        source={{ uri: item }} 
-                        style={{ width: SCREEN_WIDTH, height: 300 }} 
-                        resizeMode="contain"
-                      />
+                    <View style={{ width: SCREEN_WIDTH, height: 300, backgroundColor: imageBg }}>
+                      <Image source={{ uri: item }} style={{ width: SCREEN_WIDTH, height: 300 }} resizeMode="contain" />
                     </View>
                   )}
                 />
@@ -219,11 +228,11 @@ const ProductDetailScreen = () => {
         </View>
 
         {/* DETAILS */}
-        <View style={styles.details}>
-          <Text style={styles.name}>{product.name}</Text>
-          <Text>₹{product.price}</Text>
+        <View style={[styles.details, { backgroundColor: bg }]}>
+          <Text style={[styles.name, { color: textPrimary }]}>{product.name}</Text>
+          <Text style={{ color: isDark ? "#E11D48" : "#111111", fontSize: 18, fontWeight: "800" }}>₹{product.price}</Text>
 
-          <Text>{product.description}</Text>
+          <Text style={{ color: textSecondary, marginTop: 8 }}>{product.description}</Text>
 
           {/* SIZES */}
           {product.hasSizes && product.sizes && (
@@ -239,6 +248,7 @@ const ProductDetailScreen = () => {
                       onPress={() => setSelectedSize(size)}
                       style={[
                         styles.sizeBtn,
+                        { backgroundColor: sizeBg, borderColor: sizeBorder },
                         selectedSize === size && styles.sizeBtnActive,
                         !isAvailable && styles.sizeBtnDisabled,
                       ]}
@@ -246,6 +256,7 @@ const ProductDetailScreen = () => {
                       <Text
                         style={[
                           styles.sizeText,
+                          { color: sizeTextColor },
                           selectedSize === size && styles.sizeTextActive,
                           !isAvailable && styles.sizeTextDisabled,
                         ]}
@@ -262,9 +273,9 @@ const ProductDetailScreen = () => {
           {/* FEATURES */}
           <View style={styles.featuresRow}>
             {features.map(({ Icon, label }) => (
-              <View key={label} style={styles.featureTile}>
+              <View key={label} style={[styles.featureTile, { backgroundColor: featureBg }]}>
                 <Icon size={18} color="#E11D48" />
-                <Text>{label}</Text>
+                <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>{label}</Text>
               </View>
             ))}
           </View>
@@ -273,7 +284,7 @@ const ProductDetailScreen = () => {
 
           {/* RELATED */}
           <View>
-            <Text style={{ fontWeight: "bold" }}>Related</Text>
+            <Text style={{ fontWeight: "bold", color: textPrimary, fontSize: 16, marginBottom: 8 }}>Related</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
@@ -286,7 +297,7 @@ const ProductDetailScreen = () => {
       </ScrollView>
 
       {/* ADD TO CART */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: bottomBarBg }]}>
         <TouchableOpacity onPress={handleAddToCart} style={{ flex: 1 }}>
           <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.addToCartBtn}>
             <ShoppingCart color="#fff" />

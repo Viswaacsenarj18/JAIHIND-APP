@@ -3,19 +3,20 @@ import {
   View,
   Text,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   RefreshControl,
   FlatList,
   Dimensions,
   StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useProducts } from "../context/ProductContext";
 import AppHeader from "../components/AppHeader";
 import BannerSlider from "../components/BannerSlider";
 import ProductCard from "../components/ProductCard";
 import CategoryCard from "../components/CategoryCard";
+import { useTheme } from "../context/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = SCREEN_WIDTH < 375 ? 12 : 16;
@@ -24,9 +25,13 @@ const HomePage = () => {
   const navigation = useNavigation();
   const { products, categories } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const bg = isDark ? "#111827" : "#F8F8F8";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
 
-  const featuredProducts = products.slice(0, 4);
-  const featuredCategories = categories.slice(0, 6);
+  const featuredProducts = (products || []).slice(0, 4);
+  const featuredCategories = (categories || []).slice(0, 6);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -46,8 +51,8 @@ const HomePage = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
       <AppHeader />
       <ScrollView
         style={styles.scroll}
@@ -64,7 +69,7 @@ const HomePage = () => {
 
         {/* Live Categories (horizontal scroll) */}
         <View style={[styles.section, { marginBottom: 24 }]}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: textPrimary }]}>
             Categories
           </Text>
           <FlatList
@@ -76,19 +81,17 @@ const HomePage = () => {
           />
         </View>
 
-        {/* Live Featured Products */}
         <View style={[styles.section, { marginBottom: 24 }]}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: textPrimary }]}>
             Featured Products
           </Text>
-          <FlatList
-            data={featuredProducts}
-            renderItem={renderProduct}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            columnWrapperStyle={styles.columnWrapper}
-            showsVerticalScrollIndicator={false}
-          />
+          <View style={styles.productsGrid}>
+            {featuredProducts.map((item) => (
+              <View key={item.id} style={styles.cardWrapper}>
+                <ProductCard product={item} />
+              </View>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -117,7 +120,13 @@ const styles = StyleSheet.create({
     color: "#111111",
     marginBottom: 12,
   },
-  columnWrapper: {
+  productsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  cardWrapper: {
+    width: Math.max(0, (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 12) / 2),
+    marginBottom: 12,
   },
 });

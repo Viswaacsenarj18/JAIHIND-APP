@@ -15,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 // import LinearGradient from "react-native-linear-gradient";
 
 import { useCart } from "../context/CartContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ─── Navigation types (adjust to your stack) ─────────────────────────────────
 type RootStackParamList = {
@@ -30,60 +31,41 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 const AppHeader = () => {
   const navigation = useNavigation<NavProp>();
   const { totalItems } = useCart();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const headerBg = isDark ? "#111827" : "#FFFFFF";
+  const borderColor = isDark ? "#1F2937" : "#E5E5E5";
+  const iconColor = isDark ? "#D1D5DB" : "#555555";
+  const iconBg = isDark ? "#1F2937" : "#F3F4F6";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
 
   return (
-    <View style={styles.wrapper}>
-      {/* Brand logo + name */}
+    <View style={[styles.wrapper, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
       <TouchableOpacity
         style={styles.brand}
         onPress={() => navigation.navigate("Tabs")}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={["#E11D48", "#9F1239"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.logoBox}
-        >
+        <LinearGradient colors={["#E11D48", "#9F1239"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoBox}>
           <Text style={styles.logoText}>JS</Text>
         </LinearGradient>
-        <Text style={styles.brandName}>JAIHIND SPORTS FIT</Text>
+        <Text style={[styles.brandName, { color: textColor }]}>JAIHIND SPORTS FIT</Text>
       </TouchableOpacity>
 
-      {/* Action icons */}
       <View style={styles.actions}>
-        {/* Search */}
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation.navigate("Search")}
-          activeOpacity={0.75}
-        >
-          <Search size={18} color="#555555" />
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Search")} activeOpacity={0.75}>
+          <Search size={18} color={iconColor} />
         </TouchableOpacity>
-
-        {/* Cart with badge */}
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation.navigate("Cart")}
-          activeOpacity={0.75}
-        >
-          <ShoppingCart size={18} color="#555555" />
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Cart")} activeOpacity={0.75}>
+          <ShoppingCart size={18} color={iconColor} />
           {totalItems > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {totalItems > 99 ? "99+" : totalItems}
-              </Text>
+              <Text style={styles.badgeText}>{totalItems > 99 ? "99+" : totalItems}</Text>
             </View>
           )}
         </TouchableOpacity>
-
-        {/* Notifications */}
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation.navigate("Notifications")}
-          activeOpacity={0.75}
-        >
-          <Bell size={18} color="#555555" />
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Notifications")} activeOpacity={0.75}>
+          <Bell size={18} color={iconColor} />
         </TouchableOpacity>
       </View>
     </View>

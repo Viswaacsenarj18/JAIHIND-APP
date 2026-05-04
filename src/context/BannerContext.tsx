@@ -54,7 +54,7 @@ export const BannerProvider: React.FC<BannerProviderProps> = ({ children }) => {
 
     // 🔥 REAL-TIME FIRESTORE SYNC
     console.log('🔄 Setting up Banner listener...');
-    const q = query(collection(db, 'banners')); // Temporarily remove orderBy to check if it's the cause
+    const q = query(collection(db, 'banners'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, 
       (snapshot) => {
         if (!isMounted) return;
@@ -83,8 +83,12 @@ export const BannerProvider: React.FC<BannerProviderProps> = ({ children }) => {
         clearTimeout(timeoutId);
       },
       (error) => {
-        console.error('❌ Firestore Banner listener error:', error);
         if (!isMounted) return;
+        if (error.code === 'permission-denied') {
+          console.warn("🔒 Firestore: Permission denied for banners. Check Firestore Security Rules.");
+        } else {
+          console.error('❌ Firestore Banner listener error:', error);
+        }
         setLoading(false);
         clearTimeout(timeoutId);
       }

@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
 import {
   View, Text, TouchableOpacity, FlatList, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar,
+  StyleSheet, StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {

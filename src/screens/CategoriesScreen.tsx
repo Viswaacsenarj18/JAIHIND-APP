@@ -3,16 +3,17 @@ import {
   View,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ActivityIndicator,
   Text,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import PageHeader from "../components/PageHeader";
 import CategoryCard from "../components/CategoryCard";
 import { useProducts } from "../context/ProductContext";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "../context/ThemeContext";
 
 type RootStackParamList = {
   CategoryDetail: { categoryId: string };
@@ -25,6 +26,9 @@ const NUM_COLUMNS = 2;
 const CategoriesScreen = () => {
   const { categories, loading } = useProducts();
   const navigation = useNavigation<NavProp>();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const bg = isDark ? "#111827" : "#FFFFFF";
 
   const handleCategoryPress = (categoryId: string) => {
     navigation.navigate('CategoryDetail', { categoryId });
@@ -32,20 +36,20 @@ const CategoriesScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
         <PageHeader title="Categories" showBack={false} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#E11D48" />
-          <Text style={styles.loadingText}>Loading categories...</Text>
+          <Text style={[styles.loadingText, isDark && { color: "#9CA3AF" }]}>Loading categories...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
       <PageHeader title="Categories" showBack={false} />
       <FlatList
         data={categories}

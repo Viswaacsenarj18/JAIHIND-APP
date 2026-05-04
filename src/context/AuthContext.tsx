@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged, 
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  User as FirebaseUser 
+} from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
@@ -10,6 +19,7 @@ interface User {
   phone?: string;
   role?: string;
   address?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -17,7 +27,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  updateUserProfile: (name: string, phone: string, address: string) => Promise<void>;
+  updateUserProfile: (name: string, phone: string, address: string, avatarUrl: string) => Promise<void>;
+  changePassword: (currentPw: string, newPw: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -47,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: firebaseUser.email || '',
               phone: data?.phone,
               address: data?.address,
+              avatarUrl: data?.avatarUrl,
               role: data?.role || 'user',
             });
           } else {
@@ -82,10 +94,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // 🔥 FALLBACK TIMEOUT - force loading false after 5s
+    // Fallback timeout
     timeoutId = setTimeout(() => {
       if (!isMounted) return;
-      console.warn("⚠️ AuthContext timeout - forcing loading false");
       setLoading(false);
     }, 5000);
 
@@ -101,29 +112,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (name: string, email: string, password: string) => {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = result.user.uid;
+    const isAdmin = email.trim().toLowerCase() === "admin@jaihind.com";
+    const userData = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      role: isAdmin ? 'admin' : 'user',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await setDoc(doc(db, "users", uid), userData);
+  };
+
+  const changePassword = async (currentPw: string, newPw: string) => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser || !firebaseUser.email) throw new Error("User not authenticated");
+
     try {
-      // 1. Create user in Firebase Auth
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      const uid = result.user.uid;
-
-      // 2. Store complete user data in Firestore
-      const isAdmin = email.trim().toLowerCase() === "admin@jaihind.com";
-      const userData = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        role: isAdmin ? 'admin' : 'user',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await setDoc(doc(db, "users", uid), userData);
-
-      console.log("✅ User registered and stored in DB:", uid);
-
-    } catch (error: any) {
-      console.error("❌ Registration DB error:", error);
-      // Re-throw so RegisterScreen can show the error
-      throw error;
+      // Re-authenticate before changing password (required by Firebase)
+      const credential = EmailAuthProvider.credential(firebaseUser.email, currentPw);
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updatePassword(firebaseUser, newPw);
+      console.log("✅ Password updated successfully");
+    } catch (err: any) {
+      console.error("❌ Password update error:", err.message);
+      throw err;
     }
   };
 
@@ -131,21 +145,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
-  const updateUserProfile = async (name: string, phone: string, address: string) => {
+  const updateUserProfile = async (name: string, phone: string, address: string, avatarUrl: string) => {
     if (!user) throw new Error("No user logged in");
-    try {
-      const userRef = doc(db, "users", user.id);
-      await updateDoc(userRef, {
-        name,
-        phone,
-        address,
-        updatedAt: new Date().toISOString()
-      });
-      setUser(prev => prev ? { ...prev, name, phone, address } : null);
-    } catch (err: any) {
-      console.error("Error updating profile:", err);
-      throw err;
-    }
+    const userRef = doc(db, "users", user.id);
+    await updateDoc(userRef, {
+      name,
+      phone,
+      address,
+      avatarUrl,
+      updatedAt: new Date().toISOString()
+    });
+    setUser(prev => prev ? { ...prev, name, phone, address, avatarUrl } : null);
   };
 
   return (
@@ -155,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login, 
       register, 
       updateUserProfile,
+      changePassword,
       logout,
       loading 
     }}>

@@ -4,8 +4,9 @@ import React from "react";
 
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar, Linking, Dimensions,
+  StyleSheet, StatusBar, Linking, Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -20,6 +21,7 @@ import { useAuth } from "../context/AuthContext";
 import { useOrders } from "../context/OrderContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { useTheme } from "../context/ThemeContext";
 
 
 type RootStackParamList = {
@@ -47,6 +49,8 @@ const ProfileScreen = () => {
   const { orders: allOrders }         = useOrders();
   const { items: wishlist } = useWishlist();
   const { totalItems }      = useCart();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const userOrders = allOrders.filter(o => o.userId === user?.id);
 
@@ -76,12 +80,12 @@ const ProfileScreen = () => {
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
         <PageHeader title="Profile" showBack={false} />
         <View style={styles.guestContainer}>
-          <View style={styles.guestAvatar}><User size={40} color="#9CA3AF" /></View>
-          <Text style={styles.guestTitle}>Welcome to Jaihind Sports</Text>
-          <Text style={styles.guestSubtitle}>Login or create an account to manage your orders, wishlist, and more.</Text>
+          <View style={[styles.guestAvatar, isDark && styles.guestAvatarDark]}><User size={40} color={isDark ? "#FFFFFF" : "#9CA3AF"} /></View>
+          <Text style={[styles.guestTitle, isDark && styles.textWhite]}>Welcome to Jaihind Sports</Text>
+          <Text style={[styles.guestSubtitle, isDark && styles.textGray]}>Login or create an account to manage your orders, wishlist, and more.</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Login")} activeOpacity={0.88} style={{ width: "100%" }}>
             <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.primaryBtn}>
               <Text style={styles.primaryBtnText}>Login</Text>
@@ -99,30 +103,36 @@ const ProfileScreen = () => {
 
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F8F8" />
+    <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#111827" : "#F8F8F8"} />
       <PageHeader title="Profile" showBack={false}
         right={
-          <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate("Settings")}>
-            <Edit2 size={16} color="#6B7280" />
+          <TouchableOpacity style={[styles.editBtn, isDark && styles.editBtnDark]} onPress={() => navigation.navigate("Settings")}>
+            <Edit2 size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
           </TouchableOpacity>
         }
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* User Card */}
-        <View style={styles.card}>
+        <View style={[styles.card, isDark && styles.cardDark]}>
           <View style={styles.userRow}>
             <View style={{ position: "relative" }}>
               <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.avatar}>
-                <User size={30} color="#FFFFFF" />
+                {user?.avatarUrl ? (
+                  <View style={styles.avatarImageWrapper}>
+                    <View style={styles.avatarInner} />
+                  </View>
+                ) : (
+                  <User size={30} color="#FFFFFF" />
+                )}
               </LinearGradient>
               <TouchableOpacity style={styles.cameraBtn} onPress={() => navigation.navigate("Settings")}>
                 <Camera size={12} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName} numberOfLines={1}>{user?.name || "Guest"}</Text>
+              <Text style={[styles.userName, isDark && styles.textWhite]} numberOfLines={1}>{user?.name || "Guest"}</Text>
               <View style={styles.userMetaRow}>
                 <Mail size={12} color="#9CA3AF" />
                 <Text style={styles.userMeta} numberOfLines={1}>{user?.email}</Text>
@@ -135,9 +145,9 @@ const ProfileScreen = () => {
               )}
             </View>
           </View>
-          <TouchableOpacity style={styles.editProfileBtn} onPress={() => navigation.navigate("Settings")}>
-            <Edit2 size={14} color="#333333" />
-            <Text style={styles.editProfileText}>Edit Profile</Text>
+          <TouchableOpacity style={[styles.editProfileBtn, isDark && styles.editProfileBtnDark]} onPress={() => navigation.navigate("Settings")}>
+            <Edit2 size={14} color={isDark ? "#FFFFFF" : "#333333"} />
+            <Text style={[styles.editProfileText, isDark && styles.textWhite]}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
@@ -159,19 +169,19 @@ const ProfileScreen = () => {
 
         {/* Recent Orders */}
         {recentOrders.length > 0 && (
-          <View style={styles.card}>
+          <View style={[styles.card, isDark && styles.cardDark]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Recent Orders</Text>
+              <Text style={[styles.cardTitle, isDark && styles.textWhite]}>Recent Orders</Text>
               <TouchableOpacity onPress={() => handleNavigate("Orders")}>
                 <Text style={styles.viewAll}>View All</Text>
               </TouchableOpacity>
             </View>
             {recentOrders.map((order, idx) => {
-              const sc = statusColor[order.status] ?? { bg: "#F3F4F6", text: "#6B7280" };
+              const sc = statusColor[order.status] ?? { bg: isDark ? "#374151" : "#F3F4F6", text: "#6B7280" };
               return (
-                <View key={order.id} style={[styles.orderRow, idx < recentOrders.length - 1 && styles.borderBottom]}>
+                <View key={order.id} style={[styles.orderRow, idx < recentOrders.length - 1 && (isDark ? styles.borderBottomDark : styles.borderBottom)]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.orderId}>{order.id}</Text>
+                    <Text style={[styles.orderId, isDark && styles.textWhite]}>{order.id}</Text>
                     <Text style={styles.orderMeta}>
                       {order.items.length} item{order.items.length > 1 ? "s" : ""} • ₹{order.total.toLocaleString("en-IN")}
                     </Text>
@@ -189,17 +199,17 @@ const ProfileScreen = () => {
         )}
 
         {/* Menu */}
-        <View style={styles.card}>
+        <View style={[styles.card, isDark && styles.cardDark]}>
           {menuItems.map((item, idx) => (
             <TouchableOpacity key={item.label}
-              style={[styles.menuItem, idx < menuItems.length - 1 && styles.borderBottom]}
+              style={[styles.menuItem, idx < menuItems.length - 1 && (isDark ? styles.borderBottomDark : styles.borderBottom)]}
               onPress={() => handleNavigate(item.screen)}
               activeOpacity={0.7}
             >
               <View style={styles.menuLeft}>
-                <View style={styles.menuIconBox}><item.Icon size={16} color="#333333" /></View>
+                <View style={[styles.menuIconBox, isDark && styles.menuIconBoxDark]}><item.Icon size={16} color={isDark ? "#FFFFFF" : "#333333"} /></View>
                 <View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Text style={[styles.menuLabel, isDark && styles.textWhite]}>{item.label}</Text>
                   <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                 </View>
               </View>
@@ -232,6 +242,7 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F8F8F8" },
+  safeDark: { backgroundColor: "#111827" },
   content: {
     padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 24 : 16,
     gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 18 : 14,
@@ -249,6 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: IS_SMALL_SCREEN ? 36 : IS_TABLET ? 60 : 48,
     backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center",
   },
+  guestAvatarDark: { backgroundColor: "#1F2937" },
   guestTitle: { fontSize: IS_SMALL_SCREEN ? 16 : IS_TABLET ? 24 : 20, fontWeight: "800", color: "#111111", textAlign: "center" },
   guestSubtitle: { fontSize: IS_SMALL_SCREEN ? 11 : 13, color: "#6B7280", textAlign: "center" },
   primaryBtn: {
@@ -268,6 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: IS_SMALL_SCREEN ? 16 : 18,
     backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center",
   },
+  editBtnDark: { backgroundColor: "#374151" },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
@@ -276,6 +289,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
     gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 16 : 12,
   },
+  cardDark: { backgroundColor: "#1F2937", shadowOpacity: 0.2 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardTitle: { fontSize: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 16 : 14, fontWeight: "800", color: "#111111" },
   viewAll: { fontSize: IS_SMALL_SCREEN ? 11 : 12, fontWeight: "700", color: "#E11D48" },
@@ -286,6 +300,8 @@ const styles = StyleSheet.create({
     borderRadius: IS_SMALL_SCREEN ? 28 : IS_TABLET ? 44 : 36,
     alignItems: "center", justifyContent: "center",
   },
+  avatarImageWrapper: { width: "100%", height: "100%", borderRadius: 999, overflow: "hidden" },
+  avatarInner: { flex: 1, backgroundColor: "#374151" },
   cameraBtn: {
     position: "absolute",
     bottom: IS_SMALL_SCREEN ? -1 : -2,
@@ -305,6 +321,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12,
     paddingVertical: IS_SMALL_SCREEN ? 8 : 10,
   },
+  editProfileBtnDark: { borderColor: "#374151" },
   editProfileText: { fontSize: IS_SMALL_SCREEN ? 12 : 13, fontWeight: "600", color: "#333333" },
   statsRow: { flexDirection: "row", gap: IS_SMALL_SCREEN ? 8 : IS_TABLET ? 14 : 10 },
   statCard: {
@@ -315,10 +332,12 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
     borderWidth: 1, borderColor: "#F0F0F0",
   },
+  statCardDark: { backgroundColor: "#1F2937", borderColor: "#374151", shadowOpacity: 0.2 },
   statValue: { fontSize: IS_SMALL_SCREEN ? 14 : IS_TABLET ? 18 : 16, fontWeight: "800", color: "#111111" },
   statLabel: { fontSize: IS_SMALL_SCREEN ? 9 : IS_TABLET ? 11 : 10, color: "#9CA3AF" },
   orderRow: { flexDirection: "row", alignItems: "center", paddingVertical: IS_SMALL_SCREEN ? 8 : 10 },
   borderBottom: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E5E5E5" },
+  borderBottomDark: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#374151" },
   orderId: { fontSize: IS_SMALL_SCREEN ? 12 : 13, fontWeight: "600", color: "#111111" },
   orderMeta: { fontSize: IS_SMALL_SCREEN ? 10 : 11, color: "#9CA3AF", marginTop: 2 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
@@ -334,6 +353,7 @@ const styles = StyleSheet.create({
     borderRadius: IS_SMALL_SCREEN ? 16 : 18,
     backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center",
   },
+  menuIconBoxDark: { backgroundColor: "#374151" },
   menuLabel: { fontSize: IS_SMALL_SCREEN ? 13 : 14, fontWeight: "600", color: "#111111" },
   menuSubtitle: { fontSize: IS_SMALL_SCREEN ? 10 : 11, color: "#9CA3AF", marginTop: 1 },
   menuBadge: { backgroundColor: "rgba(225,29,72,0.10)", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
@@ -346,4 +366,6 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontSize: IS_SMALL_SCREEN ? 13 : 14, fontWeight: "700", color: "#E11D48" },
   version: { textAlign: "center", fontSize: IS_SMALL_SCREEN ? 9 : 10, color: "#9CA3AF" },
+  textWhite: { color: "#FFFFFF" },
+  textGray: { color: "#9CA3AF" },
 });

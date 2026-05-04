@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,11 +17,19 @@ import PageHeader from "../components/PageHeader";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { Product } from "../data/mockData";
+import { useTheme } from "../context/ThemeContext";
 
 const WishlistScreen = () => {
   const navigation = useNavigation<any>();
   const { items, removeFromWishlist } = useWishlist();
   const { addToCart, isInCart } = useCart();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const bg = isDark ? "#111827" : "#F8F8F8";
+  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const iconBg = isDark ? "#374151" : "#F3F4F6";
 
   const handleAddToCart = (product: Product) => {
     if (!product.inStock) {
@@ -42,27 +50,19 @@ const WishlistScreen = () => {
   // Empty state
   if (items.length === 0) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F8F8F8" />
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
         <PageHeader title="Wishlist" showBack={false} />
         <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconContainer}>
+          <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? "rgba(225,29,72,0.15)" : "rgba(225,29,72,0.08)" }]}>
             <Heart size={48} color="#E11D48" />
           </View>
-          <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: textPrimary }]}>Your wishlist is empty</Text>
+          <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
             Save your favourite products here
           </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Home")}
-            activeOpacity={0.88}
-          >
-            <LinearGradient
-              colors={["#E11D48", "#F97316"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.exploreButton}
-            >
+          <TouchableOpacity onPress={() => navigation.navigate("Home")} activeOpacity={0.88}>
+            <LinearGradient colors={["#E11D48", "#F97316"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.exploreButton}>
               <Text style={styles.exploreButtonText}>Explore Products</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -72,8 +72,8 @@ const WishlistScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F8F8" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
       <PageHeader title={`Wishlist (${items.length})`} showBack={false} />
       
       <FlatList
@@ -81,7 +81,7 @@ const WishlistScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <View style={[styles.separator, isDark && { backgroundColor: "#1F2937" }]} />}
         renderItem={({ item }) => {
           const alreadyInCart = isInCart(item.id);
           const discount = item.originalPrice
@@ -89,7 +89,7 @@ const WishlistScreen = () => {
             : null;
 
           return (
-            <View style={styles.productCard}>
+            <View style={[styles.productCard, { backgroundColor: cardBg }]}>
               {/* Product Image Section */}
               <TouchableOpacity
                 onPress={() => navigation.navigate("ProductDetail", { productId: item.id })}

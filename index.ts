@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import 'react-native-url-polyfill/auto';
 // Polyfill TextEncoder/Decoder for Firebase (ignore TS error, runtime works)
 declare global {

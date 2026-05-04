@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Theme = "light" | "dark";
 
@@ -10,14 +12,35 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("jhs-theme");
-    return (saved === "dark" ? "dark" : "light") as Theme;
-  });
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    localStorage.setItem("jhs-theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    // Load theme from storage
+    const loadTheme = async () => {
+      try {
+        const saved = await AsyncStorage.getItem("jhs-theme");
+        if (saved === "dark") setTheme("dark");
+      } catch (err) {
+        console.warn("Error loading theme:", err);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  useEffect(() => {
+    // Save theme to storage
+    const saveTheme = async () => {
+      try {
+        await AsyncStorage.setItem("jhs-theme", theme);
+        // Handle Web specific class
+        if (Platform.OS === 'web') {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+        }
+      } catch (err) {
+        console.warn("Error saving theme:", err);
+      }
+    };
+    saveTheme();
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));

@@ -10,9 +10,11 @@ import {
   doc,
   serverTimestamp,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { CartItem } from "./CartContext";
+import { useAuth } from "./AuthContext";
 
 export interface Order {
   id: string;
@@ -41,54 +43,80 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // 🔥 REAL-TIME SYNC WITH FIRESTORE
   useEffect(() => {
+    if (!user) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
     let timeoutId: any;
 
-    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q,
-      (snapshot) => {
-        if (!isMounted) return;
-        const orderList: Order[] = snapshot.docs.map(docItem => ({
-          id: docItem.id,
-          userId: docItem.data().userId,
-          items: docItem.data().items || [],
-          total: docItem.data().total || 0,
-          status: docItem.data().status || "pending",
-          paymentStatus: docItem.data().paymentStatus || "pending",
-          date: docItem.data().date || new Date().toLocaleDateString(),
-          address: docItem.data().address || "",
-          phone: docItem.data().phone || "",
-          name: docItem.data().name || "",
-          createdAt: docItem.data().createdAt,
-        }));
-        setOrders(orderList);
-        setLoading(false);
-        clearTimeout(timeoutId);
-      },
-      (error) => {
-        console.error("Order sync error:", error);
-        if (!isMounted) return;
-        setLoading(false);
-        clearTimeout(timeoutId);
-      }
-    );
+    try {
+      // If admin, show all orders. If user, show only their orders.
+      const ordersRef = collection(db, "orders");
+      const q = user.role === 'admin' 
+        ? query(ordersRef, orderBy("createdAt", "desc"))
+        : query(ordersRef, where("userId", "==", user.id), orderBy("createdAt", "desc"));
 
-    // 🔥 FALLBACK TIMEOUT
-    timeoutId = setTimeout(() => {
-      if (!isMounted) return;
-      console.warn("⚠️ OrderContext timeout - forcing loading false");
+      const unsub = onSnapshot(q,
+        (snapshot) => {
+          if (!isMounted) return;
+          const orderList: Order[] = snapshot.docs.map(docItem => ({
+            id: docItem.id,
+            userId: docItem.data().userId,
+            items: docItem.data().items || [],
+            total: docItem.data().total || 0,
+            status: docItem.data().status || "pending",
+            paymentStatus: docItem.data().paymentStatus || "pending",
+            date: docItem.data().date || new Date().toLocaleDateString(),
+            address: docItem.data().address || "",
+            phone: docItem.data().phone || "",
+            name: docItem.data().name || "",
+            createdAt: docItem.data().createdAt,
+          }));
+          setOrders(orderList);
+          setLoading(false);
+          clearTimeout(timeoutId);
+        },
+        (error) => {
+          if (!isMounted) return;
+          
+          // Handle permission denied specifically
+          if (error.code === 'permission-denied') {
+            console.warn("🔒 Firestore: Permission denied for orders. This is expected if security rules are strict.");
+          } else {
+            console.error("Order sync error:", error);
+          }
+          
+          setOrders([]);
+          setLoading(false);
+          clearTimeout(timeoutId);
+        }
+      );
+
+      // 🔥 FALLBACK TIMEOUT
+      timeoutId = setTimeout(() => {
+        if (!isMounted) return;
+        console.warn("⚠️ OrderContext timeout - forcing loading false");
+        setLoading(false);
+      }, 5000);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timeoutId);
+        unsub();
+      };
+    } catch (err) {
+      console.error("Order listener setup error:", err);
       setLoading(false);
-    }, 5000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      unsub();
-    };
-  }, []);
+      return;
+    }
+  }, [user]);
 
   const placeOrder = async (items: CartItem[], total: number, address: string, name: string, phone: string, userId: string): Promise<string> => {
     try {

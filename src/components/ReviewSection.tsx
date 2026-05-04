@@ -16,6 +16,7 @@ import { db } from "../firebaseConfig";
 import { collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc, updateDoc, setDoc, Timestamp } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { uploadImageToCloudinary } from "../services/cloudinary";
+import { useTheme } from "../context/ThemeContext";
 
 export interface Review {
   id: string;
@@ -63,6 +64,16 @@ const starStyles = StyleSheet.create({
 // ─── ReviewSection ────────────────────────────────────────────────────────────
 const ReviewSection = ({ productId }: { productId: string }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const inputBg = isDark ? "#374151" : "#F3F4F6";
+  const inputBorder = isDark ? "#4B5563" : "#E5E5E5";
+  const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const summaryBg = isDark ? "#1F2937" : "#F3F4F6";
+  const iconBg = isDark ? "#374151" : "#F3F4F6";
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
 
@@ -255,16 +266,16 @@ const ReviewSection = ({ productId }: { productId: string }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Reviews & Ratings</Text>
+        <Text style={[styles.sectionTitle, { color: textPrimary }]}>Reviews & Ratings</Text>
         <TouchableOpacity onPress={showForm ? handleCancel : () => setShowForm(true)}>
           <Text style={styles.actionLink}>{showForm ? "Cancel" : "Write Review"}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Summary */}
-      <View style={styles.summary}>
+      <View style={[styles.summary, { backgroundColor: summaryBg }]}>
         <View style={styles.summaryCenter}>
-          <Text style={styles.avgRating}>{avgRating}</Text>
+          <Text style={[styles.avgRating, { color: textPrimary }]}>{avgRating}</Text>
           <StarRating rating={Math.round(Number(avgRating))} />
           <Text style={styles.reviewCount}>{reviews.length} reviews</Text>
         </View>
@@ -272,8 +283,8 @@ const ReviewSection = ({ productId }: { productId: string }) => {
 
       {/* Add Review Form */}
       {showForm && (
-        <View style={styles.form}>
-          <Text style={styles.formLabel}>Your Rating</Text>
+        <View style={[styles.form, { backgroundColor: cardBg, borderColor: inputBorder }]}>
+          <Text style={[styles.formLabel, { color: textSecondary }]}>Your Rating</Text>
           <StarRating rating={newRating} interactive onRate={setNewRating} />
           <TextInput
             value={newComment}
@@ -282,7 +293,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
             placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={3}
-            style={styles.textarea}
+            style={[styles.textarea, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]}
             textAlignVertical="top"
           />
           
@@ -302,7 +313,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
 
           <View style={styles.formActions}>
             <TouchableOpacity 
-              style={styles.addImageBtn} 
+              style={[styles.addImageBtn, { backgroundColor: inputBg }]} 
               onPress={pickImage} 
               disabled={isUploadingImage}
             >
@@ -337,21 +348,21 @@ const ReviewSection = ({ productId }: { productId: string }) => {
         {loadingReviews ? (
           <ActivityIndicator size="small" color="#E11D48" />
         ) : reviews.length === 0 ? (
-          <Text style={styles.noReviewsText}>No reviews yet. Be the first to review!</Text>
+          <Text style={[styles.noReviewsText, { color: textSecondary }]}>No reviews yet. Be the first to review!</Text>
         ) : (
           reviews.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
+            <View key={review.id} style={[styles.reviewCard, { backgroundColor: cardBg }]}>
               <View style={styles.reviewHeader}>
-                <View style={styles.avatar}>
+                <View style={[styles.avatar, { backgroundColor: iconBg }]}>
                   <User size={14} color="#9CA3AF" />
                 </View>
                 <View style={styles.reviewMeta}>
-                  <Text style={styles.reviewUser}>{review.userName}</Text>
+                  <Text style={[styles.reviewUser, { color: textPrimary }]}>{review.userName}</Text>
                   <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
                 </View>
                 <StarRating rating={review.rating} />
               </View>
-              <Text style={styles.reviewComment}>{review.comment}</Text>
+              <Text style={[styles.reviewComment, { color: textSecondary }]}>{review.comment}</Text>
               
               {/* Review Attached Images */}
               {review.images && review.images.length > 0 && (
@@ -366,8 +377,8 @@ const ReviewSection = ({ productId }: { productId: string }) => {
               {user?.id === review.userId && (
                 <View style={styles.ownerActions}>
                   <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(review)}>
-                    <Edit2 size={14} color="#4B5563" />
-                    <Text style={styles.actionBtnText}>Edit</Text>
+                    <Edit2 size={14} color={isDark ? "#9CA3AF" : "#4B5563"} />
+                    <Text style={[styles.actionBtnText, { color: isDark ? "#9CA3AF" : "#4B5563" }]}>Edit</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(review.id)}>

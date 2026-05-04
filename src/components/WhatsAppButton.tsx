@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#111111",
-    whiteSpace: "nowrap",
   },
   fab: {
     width: 56,

@@ -2,12 +2,12 @@ import "react-native-gesture-handler";
 import "react-native-url-polyfill/auto";
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Platform, ActivityIndicator } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Home, Grid2x2, ShoppingCart, Heart, User } from "lucide-react-native";
+import { Home, LayoutGrid, ShoppingCart, Heart, User } from "lucide-react-native";
 
 /* CONTEXTS */
 import { AdminAuthProvider, useAdminAuth } from "./src/context/AdminAuthContext";
@@ -17,6 +17,7 @@ import { CartProvider } from "./src/context/CartContext";
 import { WishlistProvider } from "./src/context/WishlistContext";
 import { BannerProvider } from "./src/context/BannerContext";
 import { OrderProvider } from "./src/context/OrderContext";
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 /* COMPONENTS */
 import SplashScreen from "./src/components/SplashScreen";
@@ -59,11 +60,35 @@ import OrdersScreen from "./src/screens/OrdersScreen";
 import NotificationsScreen from "./src/screens/NotificationsScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import NotFoundScreen from "./src/screens/NotFoundScreen";
+import { Text } from "react-native";
+
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "#FFF" }}>
+          <Text style={{ color: "red", fontWeight: "bold", fontSize: 18, marginBottom: 10 }}>App Crash Error:</Text>
+          <Text style={{ textAlign: 'center' }}>{this.state.error?.toString()}</Text>
+          <Text style={{ marginTop: 20, color: "#666" }}>Please check the console for details.</Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* NAVIGATION */
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+/* ADMIN PANEL */
 /* ADMIN PANEL */
 const AdminPanel = ({ navigation }: any) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -114,19 +139,22 @@ const AdminPanel = ({ navigation }: any) => {
 
 /* USER TABS */
 function UserTabs() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: "#E11D48",
-          tabBarInactiveTintColor: "#9CA3AF",
+          tabBarInactiveTintColor: isDark ? "#9CA3AF" : "#6B7280",
           tabBarStyle: {
             borderTopWidth: 1,
-            borderTopColor: "#E5E7EB",
+            borderTopColor: isDark ? "#1F2937" : "#E5E7EB",
             paddingBottom: Platform.OS === "android" ? 8 : 0,
             height: Platform.OS === "android" ? 56 : 60,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: isDark ? "#111827" : "#FFFFFF",
           },
           tabBarLabelStyle: {
             fontSize: 11,
@@ -151,7 +179,7 @@ function UserTabs() {
           component={CategoriesScreen}
           options={{
             tabBarLabel: "Categories",
-            tabBarIcon: ({ color, size }: any) => <Grid2x2 size={size} color={color} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, size }: any) => <LayoutGrid size={size} color={color} strokeWidth={1.5} />,
           }}
         />
         <Tab.Screen
@@ -188,17 +216,29 @@ function UserTabs() {
 const AppContent = () => {
   const { user, loading } = useAuth();
   const { isAdminAuthenticated } = useAdminAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFFFFF" }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: isDark ? "#111827" : "#FFFFFF" }}>
         <ActivityIndicator size="large" color="#E11D48" />
       </View>
     );
   }
 
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      background: isDark ? "#111827" : "#F8F8F8",
+      card: isDark ? "#111827" : "#FFFFFF",
+      text: isDark ? "#FFFFFF" : "#111111",
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAdminAuthenticated || user?.role === 'admin' ? (
           <Stack.Screen name="Admin" component={AdminPanel} />
@@ -213,7 +253,7 @@ const AppContent = () => {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
 
-        {/* User Screens (Accessible even if redirected to Login) */}
+        {/* User Screens */}
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="CategoryDetail" component={ProductListScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
@@ -234,26 +274,30 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <AdminAuthProvider>
-      <AuthProvider>
-        <ProductProvider>
-          <CartProvider>
-            <OrderProvider>
-              <BannerProvider>
-                <WishlistProvider>
-                  <SafeAreaProvider>
-                    <AppContent />
-                    {showSplash && (
-                      <SplashScreen onFinish={() => setShowSplash(false)} />
-                    )}
-                    <StatusBar style="dark" />
-                  </SafeAreaProvider>
-                </WishlistProvider>
-              </BannerProvider>
-            </OrderProvider>
-          </CartProvider>
-        </ProductProvider>
-      </AuthProvider>
-    </AdminAuthProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AdminAuthProvider>
+            <AuthProvider>
+              <ProductProvider>
+                <CartProvider>
+                  <OrderProvider>
+                    <BannerProvider>
+                      <WishlistProvider>
+                        <AppContent />
+                        {showSplash && (
+                          <SplashScreen onFinish={() => setShowSplash(false)} />
+                        )}
+                        <StatusBar style="dark" />
+                      </WishlistProvider>
+                    </BannerProvider>
+                  </OrderProvider>
+                </CartProvider>
+              </ProductProvider>
+            </AuthProvider>
+          </AdminAuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

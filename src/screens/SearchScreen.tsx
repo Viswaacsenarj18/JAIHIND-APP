@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar,
+  StyleSheet, StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import { SlidersHorizontal, X } from "lucide-react-native";
 import PageHeader from "../components/PageHeader";
 import SearchBar from "../components/SearchBar";
