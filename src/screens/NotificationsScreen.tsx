@@ -33,6 +33,7 @@ const NotificationsScreen = () => {
 
   const markRead   = (id: string) => setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
   const markAllRead = () => setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  const deleteNotif = (id: string) => setNotifs((prev) => prev.filter((n) => n.id !== id));
 
   if (notifs.length === 0) {
     return (
@@ -69,8 +70,17 @@ const NotificationsScreen = () => {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.cardTop}>
-                  <Text style={[styles.cardTitle, !n.read && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
-                  {!n.read && <View style={styles.dot} />}
+                  <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                    <Text style={[styles.cardTitle, !n.read && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
+                    {!n.read && <View style={styles.dot} />}
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => deleteNotif(n.id)} 
+                    style={{ padding: 4, marginLeft: 8 }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={{ color: "#9CA3AF", fontSize: 16, fontWeight: "600" }}>✕</Text>
+                  </TouchableOpacity>
                 </View>
                 <Text style={styles.cardMsg} numberOfLines={2}>{n.message}</Text>
                 <Text style={styles.cardTime}>{n.time}</Text>

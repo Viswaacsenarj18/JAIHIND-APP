@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Package } from "lucide-react-native";
+import { Package, Trash2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import PageHeader from "../components/PageHeader";
 import { useOrders } from "../context/OrderContext";
@@ -16,8 +16,16 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 const OrdersScreen = () => {
   const navigation = useNavigation<any>();
-  const { orders, loading } = useOrders();
+  const { orders, loading, updateOrderStatus, deleteOrder } = useOrders();
   const { user } = useAuth();
+  
+  const handleCancelOrder = (orderId: string) => {
+    updateOrderStatus(orderId, "cancelled");
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    deleteOrder(orderId);
+  };
 
   const myOrders = user ? orders.filter((o) => o.userId === user.id) : [];
 
@@ -65,7 +73,26 @@ const OrdersScreen = () => {
                   <Text style={styles.itemCount}>{order.items.length} item{order.items.length > 1 ? "s" : ""}</Text>
                   <Text style={styles.date}>{order.date}</Text>
                 </View>
-                <Text style={styles.total}>Rs.{order.total.toLocaleString("en-IN")}</Text>
+                <View style={{ alignItems: "flex-end", gap: 6 }}>
+                  <Text style={styles.total}>Rs.{order.total.toLocaleString("en-IN")}</Text>
+                  {order.status === "pending" && (
+                    <TouchableOpacity 
+                      onPress={() => handleCancelOrder(order.id)}
+                      style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: "#FEE2E2" }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Cancel Order</Text>
+                    </TouchableOpacity>
+                  )}
+                  {order.status === "cancelled" && (
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteOrder(order.id)}
+                      style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: "#FEE2E2", flexDirection: "row", alignItems: "center", gap: 4 }}
+                    >
+                      <Trash2 size={12} color="#DC2626" />
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Delete</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
           );

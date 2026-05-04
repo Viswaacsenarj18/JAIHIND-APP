@@ -9,6 +9,7 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { CartItem } from "./CartContext";
@@ -31,6 +32,7 @@ interface OrderContextType {
   orders: Order[];
   placeOrder: (items: CartItem[], total: number, address: string, name: string, phone: string, userId: string) => Promise<string>;
   updateOrderStatus: (orderId: string, status: Order["status"]) => Promise<void>;
+  deleteOrder: (orderId: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -144,8 +146,19 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    try {
+      await deleteDoc(doc(db, "orders", orderId));
+      Alert.alert("Success", "Order deleted from history");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      Alert.alert("Error", "Failed to delete order");
+      throw error;
+    }
+  };
+
   return (
-    <OrderContext.Provider value={{ orders, placeOrder, updateOrderStatus, loading }}>
+    <OrderContext.Provider value={{ orders, placeOrder, updateOrderStatus, deleteOrder, loading }}>
       {children}
     </OrderContext.Provider>
   );

@@ -14,11 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 // react-native-linear-gradient users swap above for:
 // import LinearGradient from "react-native-linear-gradient";
 
-// ─── Swap these with your real context hooks when ready ──────────────────────
-// import { useCart } from "../context/CartContext";
-
-// Placeholder until CartContext is wired up
-const useCart = () => ({ totalItems: 2 });
+import { useCart } from "../context/CartContext";
 
 // ─── Navigation types (adjust to your stack) ─────────────────────────────────
 type RootStackParamList = {
