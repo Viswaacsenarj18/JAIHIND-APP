@@ -20,13 +20,16 @@ type RootStackParamList = {
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2; // 16px side padding, 12px gap
+const IS_SMALL_SCREEN = SCREEN_WIDTH < 375;
+const IS_LARGE_SCREEN = SCREEN_WIDTH > 600;
+const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
 
 interface Props {
   product: Product;
+  cardWidth?: number;
 }
 
-const ProductCard = ({ product }: Props) => {
+const ProductCard = ({ product, cardWidth }: Props) => {
   const navigation = useNavigation<NavProp>();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
@@ -34,9 +37,11 @@ const ProductCard = ({ product }: Props) => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
 
+  const width = cardWidth || DEFAULT_CARD_WIDTH;
+
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { width }]}
       activeOpacity={0.92}
       onPress={() => navigation.navigate("ProductDetail", { productId: product.id })}
     >
@@ -45,7 +50,7 @@ const ProductCard = ({ product }: Props) => {
         <Image
           source={{ uri: product.images?.[0] || "" }}
           style={styles.image}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         {/* Badge — top left */}
@@ -110,9 +115,8 @@ export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
+    borderRadius: IS_SMALL_SCREEN ? 10 : 14,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     width: "100%",
-    height: CARD_WIDTH,        // square image
+    aspectRatio: 1,
     backgroundColor: "#F3F4F6",
   },
   image: {
@@ -132,94 +136,94 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 8,
-    left: 8,
+    top: IS_SMALL_SCREEN ? 6 : 8,
+    left: IS_SMALL_SCREEN ? 6 : 8,
     backgroundColor: "#E11D48",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: IS_SMALL_SCREEN ? 6 : 8,
+    paddingVertical: IS_SMALL_SCREEN ? 2 : 3,
     borderRadius: 6,
   },
   badgeText: {
-    fontSize: 9,
+    fontSize: IS_SMALL_SCREEN ? 7 : 9,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 0.3,
   },
   discountTag: {
     position: "absolute",
-    top: 8,
+    top: IS_SMALL_SCREEN ? 6 : 8,
     backgroundColor: "#111111",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: IS_SMALL_SCREEN ? 4 : 6,
+    paddingVertical: IS_SMALL_SCREEN ? 2 : 3,
     borderRadius: 6,
   },
   discountWithBadge: {
-    left: 76, // offset past badge
+    left: IS_SMALL_SCREEN ? 64 : 76,
   },
   discountNoBadge: {
-    left: 8,
+    left: IS_SMALL_SCREEN ? 6 : 8,
   },
   discountText: {
-    fontSize: 9,
+    fontSize: IS_SMALL_SCREEN ? 7 : 9,
     fontWeight: "800",
     color: "#FFFFFF",
   },
   wishlistBtn: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    top: IS_SMALL_SCREEN ? 6 : 8,
+    right: IS_SMALL_SCREEN ? 6 : 8,
+    width: IS_SMALL_SCREEN ? 28 : 30,
+    height: IS_SMALL_SCREEN ? 28 : 30,
+    borderRadius: IS_SMALL_SCREEN ? 14 : 15,
     backgroundColor: "rgba(255,255,255,0.90)",
     alignItems: "center",
     justifyContent: "center",
   },
   info: {
-    padding: 10,
-    gap: 4,
+    padding: IS_SMALL_SCREEN ? 8 : 10,
+    gap: 3,
   },
   name: {
-    fontSize: 12,
+    fontSize: IS_SMALL_SCREEN ? 11 : 12,
     fontWeight: "600",
     color: "#111111",
-    lineHeight: 17,
+    lineHeight: IS_SMALL_SCREEN ? 15 : 17,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: 2,
   },
   star: {
-    fontSize: 10,
+    fontSize: IS_SMALL_SCREEN ? 9 : 10,
   },
   ratingText: {
-    fontSize: 11,
+    fontSize: IS_SMALL_SCREEN ? 10 : 11,
     fontWeight: "700",
     color: "#111111",
   },
   reviewText: {
-    fontSize: 10,
+    fontSize: IS_SMALL_SCREEN ? 9 : 10,
     color: "#9CA3AF",
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     flexWrap: "wrap",
   },
   price: {
-    fontSize: 14,
+    fontSize: IS_SMALL_SCREEN ? 12 : 14,
     fontWeight: "800",
     color: "#111111",
   },
   originalPrice: {
-    fontSize: 11,
+    fontSize: IS_SMALL_SCREEN ? 9 : 11,
     color: "#9CA3AF",
     textDecorationLine: "line-through",
   },
   outOfStock: {
-    fontSize: 10,
+    fontSize: IS_SMALL_SCREEN ? 9 : 10,
     fontWeight: "600",
     color: "#E11D48",
     marginTop: 2,

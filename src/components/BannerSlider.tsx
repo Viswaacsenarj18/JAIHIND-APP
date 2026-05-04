@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect, useRef } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   View,
   Text,
@@ -10,12 +12,23 @@ import {
 } from "react-native";
 
 import { useBanners } from "../context/BannerContext";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH - 32;
+const CARD_WIDTH = SCREEN_WIDTH; // Full width like Flipkart
+
+type RootStackParamList = {
+  ProductDetail: { productId: string };
+  CategoryProducts: { category: string; categoryName: string };
+  Tabs: { screen: string };
+};
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const BannerSlider = () => {
   const { banners } = useBanners();
+  const navigation = useNavigation<NavProp>();
 
   const [current, setCurrent] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -51,6 +64,17 @@ const BannerSlider = () => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
   };
 
+  const handleBannerPress = (item: any) => {
+    if (item.linkType === 'category' && item.linkId) {
+      navigation.navigate("CategoryProducts", { 
+        category: item.linkId, 
+        categoryName: item.title 
+      });
+    } else if (item.linkType === 'product' && item.linkId) {
+      navigation.navigate("ProductDetail", { productId: item.linkId });
+    }
+  };
+
   // ✅ EMPTY STATE
   if (banners.length === 0) {
     return (
@@ -78,23 +102,27 @@ const BannerSlider = () => {
           index,
         })}
         renderItem={({ item }) => (
-          <View style={styles.slide}>
-            {/* ✅ IMAGE BACKGROUND */}
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => handleBannerPress(item)}
+            style={styles.slide}
+          >
             <ImageBackground
               source={{ uri: item.imageUrl }}
               style={styles.image}
-              imageStyle={{ borderRadius: 16 }}
+              resizeMode="cover"
             >
-              {/* Overlay */}
-              <View style={styles.overlay}>
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.7)"]}
+                style={styles.overlay}
+              >
                 <Text style={styles.title}>{item.title}</Text>
-
-                <TouchableOpacity style={styles.ctaBtn}>
+                <View style={styles.ctaBtn}>
                   <Text style={styles.ctaText}>Shop Now</Text>
-                </TouchableOpacity>
-              </View>
+                </View>
+              </LinearGradient>
             </ImageBackground>
-          </View>
+          </TouchableOpacity>
         )}
       />
 
@@ -119,24 +147,20 @@ export default BannerSlider;
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
+    marginVertical: 10,
   },
-
   slide: {
     width: CARD_WIDTH,
-    marginRight: 12,
   },
-
   image: {
     width: "100%",
-    height: 160,
+    height: 180,
     justifyContent: "flex-end",
+    backgroundColor: "#F3F4F6",
   },
-
   overlay: {
-    backgroundColor: "rgba(0,0,0,0.3)",
-    padding: 16,
-    borderRadius: 16,
+    padding: 20,
+    paddingBottom: 25,
   },
 
   title: {

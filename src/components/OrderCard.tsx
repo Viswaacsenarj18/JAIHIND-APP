@@ -41,7 +41,7 @@ const OrderCard = ({ order }: { order: Order }) => {
               key={item.product.id}
               source={{ uri: item.product.image }}
               style={[styles.thumb, { marginLeft: idx === 0 ? 0 : -8 }]}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ))}
         </View>

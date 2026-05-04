@@ -21,7 +21,12 @@ type RootStackParamList = {
 };
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-const CategoryCard = ({ category }: { category: Category }) => {
+interface CategoryCardProps {
+  category: Category;
+  onPress?: () => void;
+}
+
+const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
   const navigation = useNavigation<NavProp>();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -41,6 +46,8 @@ const CategoryCard = ({ category }: { category: Category }) => {
       bounciness: 4,
     }).start();
 
+  const onCardPress = onPress || (() => navigation.navigate("CategoryDetail" as never, { categoryId: category.id })); 
+
   return (
     <Animated.View
       style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}
@@ -58,7 +65,7 @@ const CategoryCard = ({ category }: { category: Category }) => {
         <Image
           source={{ uri: category.image }}
           style={StyleSheet.absoluteFill}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         {/* Bottom-up dark gradient so text is always readable */}
@@ -91,7 +98,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "#CCCCCC", // placeholder while image loads
+    backgroundColor: "#F3F4F6", // light background for neat look
     // Shadow for card lift effect (matches screenshot)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },

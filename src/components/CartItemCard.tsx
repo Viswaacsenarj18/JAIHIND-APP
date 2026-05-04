@@ -35,7 +35,7 @@ const CartItemCard = ({ item, onUpdateQuantity, onRemove }: Props) => {
       <Image
         source={{ uri: item.product.image }}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
       <View style={styles.info}>
         {/* Name + category */}

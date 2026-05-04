@@ -8,51 +8,119 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
+import { CheckCircle } from "lucide-react-native";
+import { useAuth } from "../context/AuthContext";
 
 type RootStackParamList = {
   Login: undefined;
-  Tabs:  undefined;
+  Tabs: undefined;
+  Register: undefined;
   [key: string]: object | undefined;
 };
+
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RegisterScreen = () => {
-  const navigation                      = useNavigation<NavProp>();
-  const [name,     setName]             = useState("");
-  const [email,    setEmail]            = useState("");
-  const [password, setPassword]         = useState("");
-  const [error,    setError]            = useState("");
-  const [loading,  setLoading]          = useState(false);
+  const navigation = useNavigation<NavProp>();
+  const { register } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successModal, setSuccessModal] = useState(false);
+
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async () => {
     setError("");
-    if (!name || !email || !password) {
-      setError("Please fill all fields");
+    
+    // Validate all fields
+    if (!name.trim()) {
+      setError("Please enter your full name");
       return;
     }
+    
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+    
+    // Validate email format
+    if (!isValidEmail(email.trim())) {
+      setError("Please enter a valid email address (e.g., name@example.com)");
+      return;
+    }
+    
+    if (!password) {
+      setError("Please enter a password");
+      return;
+    }
+    
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Password must be at least 6 characters long");
       return;
     }
+    
     setLoading(true);
+    
     try {
-      // await register(name, email, password); // ← uncomment when AuthContext is wired
-      await new Promise((r) => setTimeout(r, 800)); // placeholder delay
-      navigation.navigate("Tabs");
-    } catch {
-      setError("Registration failed. Please try again.");
+      // Register with correct parameter order (name, email, password)
+      await register(name.trim(), email.trim().toLowerCase(), password);
+      // App.tsx handles the routing automatically upon auth state change
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      
+      // Handle specific Firebase error messages
+      if (err.code === 'auth/email-already-in-use') {
+        setError("An account with this email already exists. Please sign in instead.");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("Invalid email address format. Please check your email.");
+      } else if (err.code === 'auth/weak-password') {
+        setError("Password is too weak. Please use a stronger password.");
+      } else if (err.code === 'auth/network-request-failed') {
+        setError("Network error. Please check your internet connection.");
+      } else if (err.message === "Missing or insufficient permissions.") {
+        setError("Unable to create account due to security rules. Please contact support.");
+      } else {
+        setError(err.message || "Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Success Modal Component
+  const SuccessModal = () => (
+    <Modal visible={successModal} transparent animationType="fade">
+      <View style={styles.successOverlay}>
+        <View style={styles.successCard}>
+          <CheckCircle size={60} color="#10B981" strokeWidth={1.5} />
+          <Text style={styles.successTitle}>Registration Successful!</Text>
+          <Text style={styles.successMessage}>
+            Your account has been created. Redirecting to login...
+          </Text>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ── Gradient header ── */}
+      <SuccessModal />
+
+      {/* Gradient header */}
       <LinearGradient
         colors={["#E11D48", "#9F1239"]}
         start={{ x: 0, y: 0 }}
@@ -65,104 +133,154 @@ const RegisterScreen = () => {
         <Text style={styles.brandName}>JAIHIND SPORTS</Text>
       </LinearGradient>
 
-      {/* ── Form card ── */}
-      <ScrollView
-        contentContainerStyle={styles.formCard}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      {/* Form card */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <Text style={styles.welcomeTitle}>Create Account</Text>
-        <Text style={styles.welcomeSub}>Join us to start shopping</Text>
-
-        {/* Error */}
-        {!!error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {/* Full Name */}
-        <Text style={styles.label}>Full Name</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Your full name"
-          placeholderTextColor="#9CA3AF"
-          autoCapitalize="words"
-          returnKeyType="next"
-          style={styles.input}
-        />
-
-        {/* Email */}
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="next"
-          style={styles.input}
-        />
-
-        {/* Password */}
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Min 6 characters"
-          placeholderTextColor="#9CA3AF"
-          secureTextEntry
-          autoCapitalize="none"
-          returnKeyType="done"
-          onSubmitEditing={handleSubmit}
-          style={styles.input}
-        />
-
-        {/* Submit */}
-        <TouchableOpacity
-          onPress={handleSubmit}
-          activeOpacity={0.88}
-          disabled={loading}
+        <ScrollView
+          contentContainerStyle={styles.formCard}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={["#E11D48", "#9F1239"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitBtn}
-          >
-            {loading
-              ? <ActivityIndicator color="#FFFFFF" />
-              : <Text style={styles.submitText}>Create Account</Text>}
-          </LinearGradient>
-        </TouchableOpacity>
+          <Text style={styles.welcomeTitle}>Create Account</Text>
+          <Text style={styles.welcomeSub}>Join us to start shopping</Text>
 
-        {/* Sign in link */}
-        <View style={styles.signupRow}>
-          <Text style={styles.signupLabel}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-            <Text style={styles.signupLink}>Sign In</Text>
+          {/* Error message */}
+          {error !== "" && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Full Name Input */}
+          <Text style={styles.label}>Full Name</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Your full name"
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="words"
+            returnKeyType="next"
+            style={styles.input}
+            editable={!loading}
+          />
+
+          {/* Email Input */}
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            returnKeyType="next"
+            style={styles.input}
+            editable={!loading}
+          />
+
+          {/* Password Input */}
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Min 6 characters"
+            placeholderTextColor="#9CA3AF"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
+            style={styles.input}
+            editable={!loading}
+          />
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            onPress={handleSubmit}
+            activeOpacity={0.88}
+            disabled={loading}
+          >
+            <LinearGradient
+              colors={["#E11D48", "#9F1239"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitText}>Create Account</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
+
+          {/* Sign In Link */}
+          <View style={styles.signupRow}>
+            <Text style={styles.signupLabel}>Already have an account? </Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("Login")}
+              disabled={loading}
+            >
+              <Text style={styles.signupLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 export default RegisterScreen;
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// Styles with responsive media queries
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  // Success Modal Styles
+  successOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.60)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 28,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 12,
+    maxWidth: 320,
+    width: "80%",
+  },
+  successTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#10B981",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  successMessage: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 20,
+  },
   // Header
   header: {
-    paddingTop: 56,
-    paddingBottom: 48,
+    paddingTop: Platform.OS === "web" ? 40 : 56,
+    paddingBottom: Platform.OS === "web" ? 36 : 48,
     alignItems: "center",
     gap: 12,
   },
@@ -186,8 +304,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     letterSpacing: 3,
   },
-  // Form card (overlaps gradient with rounded top)
+  // Form card
   formCard: {
+    flexGrow: 1,
     marginTop: -24,
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
@@ -197,73 +316,79 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   welcomeTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     color: "#111111",
+    marginBottom: 4,
   },
   welcomeSub: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#6B7280",
+    marginBottom: 8,
   },
-  // Error
   errorBox: {
     backgroundColor: "rgba(239,68,68,0.10)",
     borderRadius: 12,
     padding: 12,
+    marginVertical: 8,
   },
   errorText: {
     fontSize: 13,
     color: "#EF4444",
+    lineHeight: 18,
   },
-  // Fields
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     color: "#6B7280",
-    marginBottom: 4,
+    marginBottom: 6,
+    marginTop: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   input: {
-    height: 48,
-    backgroundColor: "#F3F4F6",
+    height: 50,
+    backgroundColor: "#F9FAFB",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    paddingHorizontal: 14,
-    fontSize: 14,
-    color: "#111111",
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#111827",
   },
-  // Button
   submitBtn: {
     height: 52,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 16,
     shadowColor: "#E11D48",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     elevation: 6,
   },
+  submitBtnDisabled: {
+    opacity: 0.7,
+  },
   submitText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
     color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
-  // Sign in row
   signupRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 20,
+    marginBottom: 10,
   },
   signupLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#6B7280",
   },
   signupLink: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#E11D48",
   },

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -23,7 +24,7 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { products } from "../data/mockData";
+import { useProducts } from "../context/ProductContext";
 import ProductCard from "../components/ProductCard";
 import ReviewSection from "../components/ReviewSection";
 import { useCart } from "../context/CartContext";
@@ -48,17 +49,27 @@ const ProductDetailScreen = () => {
   const route = useRoute<RouteType>();
 
   const { addToCart } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // ✅ USE YOUR CONTEXT
+  const { products, getProductById, loading: productsLoading } = useProducts();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const productId = route.params?.productId;
-  const product = products.find((p) => p.id === productId);
+  const product = getProductById(productId);
+
+  if (productsLoading) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#E11D48" />
+      </SafeAreaView>
+    );
+  }
 
   if (!product) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Text>Product not found</Text>
+        <Text style={styles.notFoundText}>Product not found</Text>
       </SafeAreaView>
     );
   }
@@ -68,7 +79,11 @@ const ProductDetailScreen = () => {
   );
 
   const handleAddToCart = () => {
-    addToCart(product);
+    if (product.hasSizes && !selectedSize) {
+      alert("Please select a size");
+      return;
+    }
+    addToCart({ ...product, selectedSize });
     navigation.navigate("Tabs", { screen: "Cart" });
   };
 
@@ -79,7 +94,11 @@ const ProductDetailScreen = () => {
       <ScrollView>
         {/* IMAGE */}
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: product.image }} style={styles.image} />
+          <Image 
+            source={{ uri: product.images?.[0] || product.image }} 
+            style={styles.image} 
+            resizeMode="contain" 
+          />
 
           {/* HEADER */}
           <View style={styles.imageButtons}>
@@ -113,6 +132,40 @@ const ProductDetailScreen = () => {
           <Text>₹{product.price}</Text>
 
           <Text>{product.description}</Text>
+
+          {/* SIZES */}
+          {product.hasSizes && product.sizes && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Select Size</Text>
+              <View style={styles.sizeRow}>
+                {Object.entries(product.sizes).map(([size, qty]) => {
+                  const isAvailable = (qty as number) > 0;
+                  return (
+                    <TouchableOpacity
+                      key={size}
+                      disabled={!isAvailable}
+                      onPress={() => setSelectedSize(size)}
+                      style={[
+                        styles.sizeBtn,
+                        selectedSize === size && styles.sizeBtnActive,
+                        !isAvailable && styles.sizeBtnDisabled,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sizeText,
+                          selectedSize === size && styles.sizeTextActive,
+                          !isAvailable && styles.sizeTextDisabled,
+                        ]}
+                      >
+                        {size}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* FEATURES */}
           <View style={styles.featuresRow}>
@@ -159,7 +212,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#fff" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  imageWrapper: { height: 300 },
+  imageWrapper: { height: 300, backgroundColor: "#F3F4F6" },
   image: { width: "100%", height: "100%" },
 
   imageButtons: {
@@ -203,5 +256,44 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 15,
     borderRadius: 10,
+  },
+  notFoundText: {
+    fontSize: 16,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  section: { marginTop: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#111111", marginBottom: 12 },
+  sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  sizeBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  sizeBtnActive: {
+    borderColor: "#E11D48",
+    backgroundColor: "rgba(225,29,72,0.05)",
+  },
+  sizeBtnDisabled: {
+    backgroundColor: "#F3F4F6",
+    borderColor: "#F3F4F6",
+    opacity: 0.5,
+  },
+  sizeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4B5563",
+  },
+  sizeTextActive: {
+    color: "#E11D48",
+  },
+  sizeTextDisabled: {
+    color: "#9CA3AF",
+    textDecorationLine: "line-through",
   },
 });

@@ -5,15 +5,16 @@ import {
   Animated,
   StyleSheet,
   Easing,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-// react-native-linear-gradient: import LinearGradient from "react-native-linear-gradient";
 
 interface SplashScreenProps {
-  onFinish: () => void; // called when animation ends — navigate to Login
+  onFinish: () => void;
 }
 
 const SplashScreen = ({ onFinish }: SplashScreenProps) => {
+  const useNativeDriver = Platform.OS !== "web";
   const logoScale  = useRef(new Animated.Value(0.5)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const titleY     = useRef(new Animated.Value(20)).current;
@@ -26,29 +27,29 @@ const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   useEffect(() => {
     // Logo pop-in
     Animated.parallel([
-      Animated.spring(logoScale, { toValue: 1, useNativeDriver: true, stiffness: 200, damping: 15 }),
-      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, useNativeDriver, stiffness: 200, damping: 15 }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver }),
     ]).start(() => {
       // Title slide up
       Animated.parallel([
-        Animated.timing(titleY, { toValue: 0, duration: 300, useNativeDriver: true }),
-        Animated.timing(titleOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(titleY, { toValue: 0, duration: 300, useNativeDriver }),
+        Animated.timing(titleOpacity, { toValue: 1, duration: 300, useNativeDriver }),
       ]).start(() => {
         // Tagline + spinner fade in
         Animated.parallel([
-          Animated.timing(tagOpacity, { toValue: 1, duration: 300, delay: 300, useNativeDriver: true }),
-          Animated.timing(spinnerOp, { toValue: 1, duration: 300, delay: 500, useNativeDriver: true }),
+          Animated.timing(tagOpacity, { toValue: 1, duration: 300, delay: 200, useNativeDriver }),
+          Animated.timing(spinnerOp, { toValue: 1, duration: 300, delay: 300, useNativeDriver }),
         ]).start();
 
         // Spinner loop
         Animated.loop(
-          Animated.timing(spinnerRot, { toValue: 1, duration: 700, easing: Easing.linear, useNativeDriver: true })
+          Animated.timing(spinnerRot, { toValue: 1, duration: 700, easing: Easing.linear, useNativeDriver })
         ).start();
 
-        // Dismiss after 2.2s total
+        // Dismiss after 1.2s total
         setTimeout(() => {
-          Animated.timing(screenOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start(onFinish);
-        }, 2200);
+          Animated.timing(screenOpacity, { toValue: 0, duration: 300, useNativeDriver }).start(onFinish);
+        }, 1200);
       });
     });
   }, []);
@@ -56,7 +57,7 @@ const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const spin = spinnerRot.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity: screenOpacity }]}>
+    <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity: screenOpacity, pointerEvents: "none" }]}>
       <LinearGradient
         colors={["#E11D48", "#9F1239"]}
         start={{ x: 0, y: 0 }}

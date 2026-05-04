@@ -97,9 +97,9 @@ const WishlistScreen = () => {
                 style={styles.imageSection}
               >
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: item.images?.[0] || "https://via.placeholder.com/400x400?text=No+Image" }}
                   style={styles.productImage}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
                 {discount && (
                   <View style={styles.discountBadge}>

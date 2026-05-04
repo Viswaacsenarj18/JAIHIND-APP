@@ -7,11 +7,14 @@ import { SlidersHorizontal, X } from "lucide-react-native";
 import PageHeader from "../components/PageHeader";
 import SearchBar from "../components/SearchBar";
 import ProductCard from "../components/ProductCard";
-import { products, categories } from "../data/mockData";
+import { useProducts } from "../context/ProductContext";
+import { ActivityIndicator } from "react-native";
 
 type SortOption = "relevance" | "price-asc" | "price-desc" | "rating";
 
 const SearchScreen = () => {
+  const navigation = useNavigation<any>();
+  const { products, categories, loading } = useProducts();
   const [query,       setQuery]       = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCat, setSelectedCat] = useState("");
@@ -33,6 +36,17 @@ const SearchScreen = () => {
     if (sortBy === "rating")     r = [...r].sort((a, b) => b.rating - a.rating);
     return r;
   }, [query, selectedCat, sortBy, inStockOnly, maxPrice]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <PageHeader title="Search" />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#E11D48" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const hasFilters  = selectedCat || sortBy !== "relevance" || inStockOnly || maxPrice < 10000;
   const showResults = query.length > 1 || !!selectedCat;
@@ -139,6 +153,7 @@ export default SearchScreen;
 
 const styles = StyleSheet.create({
   safe:            { flex: 1, backgroundColor: "#F8F8F8" },
+  center:          { flex: 1, justifyContent: "center", alignItems: "center" },
   content:         { padding: 16, gap: 14, paddingBottom: 32 },
   searchRow:       { flexDirection: "row", gap: 10, alignItems: "center" },
   filterBtn:       { width: 48, height: 48, borderRadius: 12, borderWidth: 1, borderColor: "#E5E5E5", backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },

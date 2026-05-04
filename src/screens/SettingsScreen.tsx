@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Switch, StyleSheet, SafeAreaView, StatusBar, Animated,
-  Alert,
+  Alert, Dimensions,
 } from "react-native";
 import {
   User, Lock, Bell, Moon, Sun, Shield, ChevronRight,
@@ -10,6 +10,12 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import PageHeader from "../components/PageHeader";
+import { useAuth } from "../context/AuthContext";
+
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const IS_SMALL_SCREEN = SCREEN_WIDTH < 375;
+const IS_TABLET = SCREEN_WIDTH > 600;
 
 const SettingsScreen = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -22,11 +28,13 @@ const SettingsScreen = () => {
   const [cartReminders,  setCartReminders]  = useState(true);
   // Appearance
   const [darkMode, setDarkMode] = useState(false);
+  const { user } = useAuth();
   // Profile
-  const [name,    setName]    = useState("Rahul S.");
-  const [email,   setEmail]   = useState("rahul@example.com");
-  const [phone,   setPhone]   = useState("9876543210");
+  const [name,    setName]    = useState(user?.name || "");
+  const [email,   setEmail]   = useState(user?.email || "");
+  const [phone,   setPhone]   = useState(user?.phone || "");
   const [address, setAddress] = useState("Mumbai, Maharashtra");
+
   // Password
   const [currentPw,  setCurrentPw]  = useState("");
   const [newPw,      setNewPw]      = useState("");
@@ -221,36 +229,73 @@ export default SettingsScreen;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F8F8F8" },
-  content: { padding: 16, gap: 14, paddingBottom: 32 },
+  content: {
+    padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 24 : 16,
+    gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 18 : 14,
+    paddingBottom: IS_TABLET ? 48 : 32,
+  },
   card: {
-    backgroundColor: "#FFFFFF", borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
     overflow: "hidden",
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
   },
-  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 },
-  cardLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconBox: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: 14, fontWeight: "700", color: "#111111" },
-  cardSub: { fontSize: 11, color: "#9CA3AF", marginTop: 1 },
-  cardBody: { padding: 16, paddingTop: 4, gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#E5E5E5" },
-  avatarWrapper: { alignItems: "center", paddingVertical: 8 },
-  avatar: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
+  cardHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
+  },
+  cardLeft: { flexDirection: "row", alignItems: "center", gap: IS_SMALL_SCREEN ? 10 : 12 },
+  iconBox: {
+    width: IS_SMALL_SCREEN ? 32 : 36,
+    height: IS_SMALL_SCREEN ? 32 : 36,
+    borderRadius: IS_SMALL_SCREEN ? 16 : 18,
+    alignItems: "center", justifyContent: "center",
+  },
+  cardTitle: { fontSize: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 16 : 14, fontWeight: "700", color: "#111111" },
+  cardSub: { fontSize: IS_SMALL_SCREEN ? 10 : 11, color: "#9CA3AF", marginTop: 1 },
+  cardBody: {
+    padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
+    paddingTop: 4, gap: 12,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#E5E5E5",
+  },
+  avatarWrapper: { alignItems: "center", paddingVertical: IS_SMALL_SCREEN ? 6 : 8 },
+  avatar: {
+    width: IS_SMALL_SCREEN ? 64 : IS_TABLET ? 96 : 80,
+    height: IS_SMALL_SCREEN ? 64 : IS_TABLET ? 96 : 80,
+    borderRadius: IS_SMALL_SCREEN ? 32 : IS_TABLET ? 48 : 40,
+    alignItems: "center", justifyContent: "center",
+  },
   cameraBtn: {
-    position: "absolute", bottom: 4, right: "35%",
-    width: 28, height: 28, borderRadius: 14,
+    position: "absolute",
+    bottom: IS_SMALL_SCREEN ? 2 : 4,
+    right: IS_SMALL_SCREEN ? "32%" : "35%",
+    width: IS_SMALL_SCREEN ? 24 : 28,
+    height: IS_SMALL_SCREEN ? 24 : 28,
+    borderRadius: IS_SMALL_SCREEN ? 12 : 14,
     backgroundColor: "#E11D48", alignItems: "center", justifyContent: "center",
     borderWidth: 2, borderColor: "#FFFFFF",
   },
   fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   fieldLabel: { fontSize: 11, fontWeight: "600", color: "#6B7280", textTransform: "uppercase", letterSpacing: 0.4 },
-  input: { height: 48, backgroundColor: "#F3F4F6", borderRadius: 12, borderWidth: 1, borderColor: "#E5E5E5", paddingHorizontal: 14, fontSize: 14, color: "#111111" },
-  textarea: { height: 80, paddingTop: 12, paddingBottom: 12 },
-  saveBtn: { height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  saveBtnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
-  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 },
-  toggleLabel: { fontSize: 14, color: "#111111" },
+  input: {
+    height: IS_SMALL_SCREEN ? 44 : IS_TABLET ? 52 : 48,
+    backgroundColor: "#F3F4F6", borderRadius: 12, borderWidth: 1, borderColor: "#E5E5E5",
+    paddingHorizontal: 14, fontSize: 14, color: "#111111",
+  },
+  textarea: { height: IS_SMALL_SCREEN ? 72 : 80, paddingTop: 12, paddingBottom: 12 },
+  saveBtn: {
+    height: IS_SMALL_SCREEN ? 44 : IS_TABLET ? 52 : 48,
+    borderRadius: 12, alignItems: "center", justifyContent: "center",
+  },
+  saveBtnText: { fontSize: IS_SMALL_SCREEN ? 13 : 14, fontWeight: "700", color: "#FFFFFF" },
+  toggleRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: IS_SMALL_SCREEN ? 12 : 16,
+    paddingVertical: IS_SMALL_SCREEN ? 12 : 14,
+  },
+  toggleLabel: { fontSize: IS_SMALL_SCREEN ? 13 : 14, color: "#111111" },
   borderBottom: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E5E5E5" },
   borderTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#E5E5E5" },
-  version: { fontSize: 10, color: "#9CA3AF" },
+  version: { fontSize: IS_SMALL_SCREEN ? 9 : 10, color: "#9CA3AF" },
 });

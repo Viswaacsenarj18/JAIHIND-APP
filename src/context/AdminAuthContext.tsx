@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface AdminUser {
-  name:  string;
+  name: string;
   email: string;
 }
 
 interface AdminAuthContextType {
-  admin:                AdminUser | null;
+  admin: AdminUser | null;
   isAdminAuthenticated: boolean;
-  adminLogin:           (email: string, password: string) => Promise<void>;
-  adminLogout:          () => void;
-  updateAdminProfile:   (name: string, email: string) => void;
-  changeAdminPassword:  (oldPass: string, newPass: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
+  adminLogout: () => void;
+  updateAdminProfile: (name: string, email: string) => void;
+  changeAdminPassword: (oldPass: string, newPass: string) => Promise<void>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);

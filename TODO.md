@@ -1,8 +1,10 @@
-# Banner Sync Feature
+# TODO - Media Queries for User Page + Clear Images
 
-## Feedback Implementation
-- [x] Created BannerContext.tsx
-- [x] Added BannerProvider to App.tsx
-- [x] BannerSlider uses useBanners()
-- [ ] AdminBannerPage fully integrated with context + nav to Tabs after add
+## Steps
+
+- [x] 1. Add responsive breakpoints to `ProfileScreen.tsx` (avatar, fonts, padding, gaps, buttons)
+- [x] 2. Add responsive breakpoints to `SettingsScreen.tsx` (avatar, inputs, icons, padding)
+- [x] 3. Fix image `resizeMode` in `ProductDetailScreen.tsx` (mainImage + thumbImage)
+- [x] 4. Fix `BannerSlider.tsx` layout + add `resizeMode="cover"` so admin-added banners display correctly on user home page
+
 
