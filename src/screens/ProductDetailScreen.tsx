@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   StyleSheet,
   StatusBar,
   ActivityIndicator,
+  Dimensions,
+  Share,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -21,14 +24,17 @@ import {
   Truck,
   Shield,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+
 
 import { useProducts } from "../context/ProductContext";
 import ProductCard from "../components/ProductCard";
 import ReviewSection from "../components/ReviewSection";
 import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext"; // ✅ ADD THIS
+import { useWishlist } from "../context/WishlistContext"; 
 
 type RootStackParamList = {
   ProductDetail: { productId: string };
@@ -51,9 +57,12 @@ const ProductDetailScreen = () => {
   const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // ✅ USE YOUR CONTEXT
   const { products, getProductById, loading: productsLoading } = useProducts();
   const { toggleWishlist, isInWishlist } = useWishlist();
+
+  // IMAGE CAROUSEL STATE
+  const [activeImage, setActiveImage] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
   const productId = route.params?.productId;
   const product = getProductById(productId);
@@ -87,18 +96,102 @@ const ProductDetailScreen = () => {
     navigation.navigate("Tabs", { screen: "Cart" });
   };
 
+  const onShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out ${product.name} at Jaihind Sports Fit! Only ₹${product.price}\nDownload the app to see more!`,
+      });
+    } catch (error: any) {
+      console.error("Share error:", error.message);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" />
 
       <ScrollView>
-        {/* IMAGE */}
+        {/* IMAGE CAROUSEL */}
         <View style={styles.imageWrapper}>
-          <Image 
-            source={{ uri: product.images?.[0] || product.image }} 
-            style={styles.image} 
-            resizeMode="contain" 
-          />
+          {(() => {
+            const images = product.images?.length ? product.images : (product.image ? [product.image] : ["https://via.placeholder.com/400"]);
+            const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+            const handleScroll = (e: any) => {
+              const scrollPosition = e.nativeEvent.contentOffset.x;
+              const index = Math.round(scrollPosition / SCREEN_WIDTH);
+              if (index !== activeImage) {
+                setActiveImage(index);
+              }
+            };
+
+            const goNext = () => {
+              if (activeImage < images.length - 1) {
+                flatListRef.current?.scrollToIndex({ index: activeImage + 1, animated: true });
+              }
+            };
+
+            const goPrev = () => {
+              if (activeImage > 0) {
+                flatListRef.current?.scrollToIndex({ index: activeImage - 1, animated: true });
+              }
+            };
+
+            return (
+              <View style={{ flex: 1, position: 'relative' }}>
+                <FlatList
+                  ref={flatListRef}
+                  data={images}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  keyExtractor={(item, index) => index.toString()}
+                  style={{ height: 300 }}
+                  getItemLayout={(data, index) => ({
+                    length: SCREEN_WIDTH,
+                    offset: SCREEN_WIDTH * index,
+                    index,
+                  })}
+                  renderItem={({ item }) => (
+                    <View style={{ width: SCREEN_WIDTH, height: 300, backgroundColor: '#f0f0f0' }}>
+                      <Image 
+                        source={{ uri: item }} 
+                        style={{ width: SCREEN_WIDTH, height: 300 }} 
+                        resizeMode="contain"
+                      />
+                    </View>
+                  )}
+                />
+                
+                {/* Navigation Buttons */}
+                {images.length > 1 && (
+                  <>
+                    <TouchableOpacity style={styles.navBtnLeft} onPress={goPrev}>
+                      <ChevronLeft size={24} color="#333" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.navBtnRight} onPress={goNext}>
+                      <ChevronRight size={24} color="#333" />
+                    </TouchableOpacity>
+                    
+                    {/* Dots */}
+                    <View style={styles.dotContainer}>
+                      {images.map((_, i) => (
+                        <View 
+                          key={i} 
+                          style={[
+                            styles.dot, 
+                            activeImage === i && styles.dotActive
+                          ]} 
+                        />
+                      ))}
+                    </View>
+                  </>
+                )}
+              </View>
+            );
+          })()}
 
           {/* HEADER */}
           <View style={styles.imageButtons}>
@@ -107,7 +200,6 @@ const ProductDetailScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.imageButtonsRight}>
-              {/* ✅ WISHLIST BUTTON */}
               <TouchableOpacity
                 onPress={() => toggleWishlist(product)}
                 style={styles.overlayBtn}
@@ -119,7 +211,7 @@ const ProductDetailScreen = () => {
                 />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.overlayBtn}>
+              <TouchableOpacity style={styles.overlayBtn} onPress={onShare}>
                 <Share2 size={20} />
               </TouchableOpacity>
             </View>
@@ -230,6 +322,45 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 10,
     borderRadius: 20,
+  },
+
+  navBtnLeft: {
+    position: "absolute",
+    left: 10,
+    top: "50%",
+    marginTop: -20,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  navBtnRight: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    marginTop: -20,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  dotContainer: {
+    position: "absolute",
+    bottom: 15,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+  dotActive: {
+    backgroundColor: "#E11D48",
+    width: 16,
   },
 
   details: { padding: 16 },

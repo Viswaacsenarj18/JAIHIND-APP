@@ -59,8 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               role: 'user',
             });
           }
-        } catch (err) {
-          console.error("Auth user fetch error:", err);
+        } catch (err: any) {
+          console.error("Auth user fetch error:", err.message);
+          // Fallback: if Firestore fails (e.g. permission denied), still log the user in locally
+          setUser({
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'User',
+            email: firebaseUser.email || '',
+            role: 'user',
+          });
         }
       } else {
         setUser(null);

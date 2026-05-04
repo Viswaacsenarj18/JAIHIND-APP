@@ -121,18 +121,28 @@ export default function AdminProductsPage() {
       Alert.alert('Permission Needed', 'Please grant camera roll permissions to upload images.');
       return;
     }
-    setUploading(true);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.9,
-        allowsEditing: true,
-        aspect: [1, 1],
+        quality: 0.8,
+        allowsMultipleSelection: true,
       });
-      if (!result.canceled && result.assets?.[0]) {
-        const url = await uploadImageToCloudinary(result.assets[0].uri);
-        setForm(prev => ({ ...prev, images: [...prev.images, url] }));
-        Alert.alert("Success", "Image uploaded successfully");
+
+      if (!result.canceled && result.assets) {
+        setUploading(true);
+        const uploadedUrls = [];
+        for (const asset of result.assets) {
+          try {
+            const url = await uploadImageToCloudinary(asset.uri);
+            uploadedUrls.push(url);
+          } catch (e) {
+            console.error("Cloudinary upload error:", e);
+          }
+        }
+        setForm(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls] }));
+        if (uploadedUrls.length > 0) {
+          Alert.alert("Success", `${uploadedUrls.length} images uploaded`);
+        }
       }
     } catch (e) {
       Alert.alert("Error", "Image upload failed");

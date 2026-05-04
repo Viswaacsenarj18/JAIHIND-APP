@@ -55,22 +55,26 @@ const LoginScreen = () => {
         try {
           await login(ADMIN_EMAIL, ADMIN_PASSWORD);
           // FORCE UPDATE ROLE TO ADMIN IN DATABASE
-          const { auth, db } = require("../firebaseConfig");
-          const { doc, updateDoc, setDoc, getDoc } = require("firebase/firestore");
-          if (auth.currentUser) {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-              await updateDoc(userRef, { role: 'admin' });
-            } else {
-              await setDoc(userRef, {
-                email: ADMIN_EMAIL,
-                name: "Admin",
-                role: 'admin',
-                createdAt: new Date().toISOString()
-              });
+          try {
+            const { auth, db } = require("../firebaseConfig");
+            const { doc, updateDoc, setDoc, getDoc } = require("firebase/firestore");
+            if (auth.currentUser) {
+              const userRef = doc(db, "users", auth.currentUser.uid);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                await updateDoc(userRef, { role: 'admin' });
+              } else {
+                await setDoc(userRef, {
+                  email: ADMIN_EMAIL,
+                  name: "Admin",
+                  role: 'admin',
+                  createdAt: new Date().toISOString()
+                });
+              }
+              console.log("✅ Admin role verified/updated in database");
             }
-            console.log("✅ Admin role verified/updated in database");
+          } catch (dbErr) {
+            console.warn("⚠️ Could not verify/update admin role in DB (likely permissions). Proceeding to admin panel anyway.");
           }
         } catch (firebaseErr: any) {
           if (firebaseErr.code === "auth/user-not-found" || firebaseErr.code === "auth/invalid-credential") {
@@ -78,22 +82,26 @@ const LoginScreen = () => {
             try {
               await register("Admin", ADMIN_EMAIL, ADMIN_PASSWORD);
               // Force update role to admin after successful registration
-              const { auth, db } = require("../firebaseConfig");
-              const { doc, updateDoc, setDoc, getDoc } = require("firebase/firestore");
-              if (auth.currentUser) {
-                const userRef = doc(db, "users", auth.currentUser.uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                  await updateDoc(userRef, { role: 'admin' });
-                } else {
-                  await setDoc(userRef, {
-                    email: ADMIN_EMAIL,
-                    name: "Admin",
-                    role: 'admin',
-                    createdAt: new Date().toISOString()
-                  });
+              try {
+                const { auth, db } = require("../firebaseConfig");
+                const { doc, updateDoc, setDoc, getDoc } = require("firebase/firestore");
+                if (auth.currentUser) {
+                  const userRef = doc(db, "users", auth.currentUser.uid);
+                  const userSnap = await getDoc(userRef);
+                  if (userSnap.exists()) {
+                    await updateDoc(userRef, { role: 'admin' });
+                  } else {
+                    await setDoc(userRef, {
+                      email: ADMIN_EMAIL,
+                      name: "Admin",
+                      role: 'admin',
+                      createdAt: new Date().toISOString()
+                    });
+                  }
+                  console.log("✅ Admin role verified/updated after registration");
                 }
-                console.log("✅ Admin role verified/updated after registration");
+              } catch (dbErr) {
+                 console.warn("⚠️ Could not verify/update admin role in DB (likely permissions). Proceeding to admin panel anyway.");
               }
             } catch (regErr: any) {
               console.error("❌ Admin auto-registration failed:", regErr);

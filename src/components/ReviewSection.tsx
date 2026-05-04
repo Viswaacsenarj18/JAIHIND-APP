@@ -1,27 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView
 } from "react-native";
-import { Star, User } from "lucide-react-native";
+import { Star, User, Image as ImageIcon, Trash2, X, Edit2 } from "lucide-react-native";
+import * as ImagePicker from 'expo-image-picker';
+import { db } from "../firebaseConfig";
+import { collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc, updateDoc, setDoc, Timestamp } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+import { uploadImageToCloudinary } from "../services/cloudinary";
 
 export interface Review {
   id: string;
+  productId: string;
+  userId: string;
   userName: string;
   rating: number;
   comment: string;
-  date: string;
+  images?: string[];
+  createdAt: any;
 }
-
-const mockReviews: Review[] = [
-  { id: "r1", userName: "Rahul S.", rating: 5, comment: "Excellent quality! Worth every penny.", date: "2026-03-10" },
-  { id: "r2", userName: "Priya P.", rating: 4, comment: "Good product, fast delivery. Minor packaging issue.", date: "2026-03-08" },
-  { id: "r3", userName: "Amit K.", rating: 5, comment: "Best in this price range. Highly recommended!", date: "2026-03-05" },
-];
 
 // ─── Star Rating ──────────────────────────────────────────────────────────────
 const StarRating = ({
@@ -57,28 +62,193 @@ const starStyles = StyleSheet.create({
 
 // ─── ReviewSection ────────────────────────────────────────────────────────────
 const ReviewSection = ({ productId }: { productId: string }) => {
-  const [reviews, setReviews] = useState<Review[]>(mockReviews);
+  const { user } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
   const [showForm, setShowForm] = useState(false);
   const [newRating, setNewRating] = useState(0);
   const [newComment, setNewComment] = useState("");
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!productId) return;
+    const q = query(
+      collection(db, "reviews"),
+      where("productId", "==", productId)
+      // orderBy("createdAt", "desc") // Removed to bypass indexing issues; sorting now handled in memory
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedReviews = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Review[];
+
+      // Sort manually in memory (latest first)
+      fetchedReviews.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : 0);
+        const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : 0);
+        return timeB - timeA;
+      });
+
+      setReviews(fetchedReviews);
+      setLoadingReviews(false);
+    }, (error) => {
+      console.error("Error fetching reviews:", error);
+      setLoadingReviews(false);
+    });
+
+    return () => unsubscribe();
+  }, [productId]);
 
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : "0";
 
-  const handleSubmit = () => {
-    if (!newRating || !newComment.trim()) return;
-    const review: Review = {
-      id: `r${Date.now()}`,
-      userName: "You",
-      rating: newRating,
-      comment: newComment,
-      date: new Date().toISOString().split("T")[0],
-    };
-    setReviews((prev) => [review, ...prev]);
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Needed', 'Please grant camera roll permissions to upload images.');
+      return;
+    }
+    
+    try {
+      setIsUploadingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        const url = await uploadImageToCloudinary(result.assets[0].uri);
+        setReviewImages(prev => [...prev, url]);
+      }
+    } catch (e) {
+      Alert.alert("Error", "Image upload failed");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setReviewImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (!user) {
+      Alert.alert("Authentication Required", "Please log in to submit a review.");
+      return;
+    }
+    if (!newRating) {
+      Alert.alert("Rating Required", "Please select a star rating.");
+      return;
+    }
+    if (!newComment.trim()) {
+      Alert.alert("Comment Required", "Please write a review comment.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (editingReviewId) {
+        // UPDATE EXISTING
+        await updateDoc(doc(db, "reviews", editingReviewId), {
+          rating: newRating,
+          comment: newComment.trim(),
+          images: reviewImages,
+          updatedAt: serverTimestamp(),
+        });
+        Alert.alert("Success", "Your review has been updated!");
+      } else {
+        // CREATE NEW
+        const reviewData = {
+          productId,
+          userId: user.id,
+          userName: user.name || "User",
+          rating: newRating,
+          comment: newComment.trim(),
+          images: reviewImages,
+          createdAt: Timestamp.now(), 
+        };
+
+        console.log("DEBUG: Attempting submission with 20s timeout...");
+        
+        // Promise race to detect hangs
+        const submission = addDoc(collection(db, "reviews"), reviewData);
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Firestore connection timed out. Please check your internet or Firebase rules.")), 20000)
+        );
+
+        const docRef = await Promise.race([submission, timeout]) as any;
+        console.log("✅ Review stored! ID:", docRef.id);
+        
+        alert("Success: Your review has been submitted!");
+      }
+
+      setNewRating(0);
+      setNewComment("");
+      setReviewImages([]);
+      setShowForm(false);
+      setEditingReviewId(null);
+    } catch (error: any) {
+      console.error("Error with review operation:", error);
+      Alert.alert("Error", `Failed to ${editingReviewId ? 'update' : 'submit'} review: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (review: Review) => {
+    setEditingReviewId(review.id);
+    setNewRating(review.rating);
+    setNewComment(review.comment);
+    setReviewImages(review.images || []);
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingReviewId(null);
     setNewRating(0);
     setNewComment("");
-    setShowForm(false);
+    setReviewImages([]);
+  };
+
+  const handleDelete = (reviewId: string) => {
+    Alert.alert(
+      "Delete Review",
+      "Are you sure you want to delete this review?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "reviews", reviewId));
+            } catch (error) {
+              console.error("Error deleting review:", error);
+              Alert.alert("Error", "Failed to delete review.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "Just now";
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date(timestamp));
+      return date.toISOString().split("T")[0];
+    } catch (e) {
+      return "Recently";
+    }
   };
 
   return (
@@ -86,7 +256,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
       {/* Header */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Reviews & Ratings</Text>
-        <TouchableOpacity onPress={() => setShowForm(!showForm)}>
+        <TouchableOpacity onPress={showForm ? handleCancel : () => setShowForm(true)}>
           <Text style={styles.actionLink}>{showForm ? "Cancel" : "Write Review"}</Text>
         </TouchableOpacity>
       </View>
@@ -115,29 +285,100 @@ const ReviewSection = ({ productId }: { productId: string }) => {
             style={styles.textarea}
             textAlignVertical="top"
           />
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
-            <Text style={styles.submitText}>Submit Review</Text>
-          </TouchableOpacity>
+          
+          {/* Image Upload Area */}
+          {reviewImages.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewStrip}>
+              {reviewImages.map((img, idx) => (
+                <View key={idx} style={styles.previewItem}>
+                  <Image source={{ uri: img }} style={styles.previewImage} resizeMode="cover" />
+                  <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(idx)}>
+                    <X size={12} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          <View style={styles.formActions}>
+            <TouchableOpacity 
+              style={styles.addImageBtn} 
+              onPress={pickImage} 
+              disabled={isUploadingImage}
+            >
+              {isUploadingImage ? (
+                <ActivityIndicator size="small" color="#6B7280" />
+              ) : (
+                <>
+                  <ImageIcon size={16} color="#6B7280" />
+                  <Text style={styles.addImageText}>Add Image</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.submitBtn, (!newRating || !newComment.trim() || isSubmitting) && styles.submitBtnDisabled]} 
+              onPress={handleSubmit} 
+              activeOpacity={0.85}
+              disabled={!newRating || !newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitText}>{editingReviewId ? "Update Review" : "Submit Review"}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
       {/* Reviews List */}
       <View style={styles.reviewsList}>
-        {reviews.map((review) => (
-          <View key={review.id} style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-              <View style={styles.avatar}>
-                <User size={14} color="#9CA3AF" />
+        {loadingReviews ? (
+          <ActivityIndicator size="small" color="#E11D48" />
+        ) : reviews.length === 0 ? (
+          <Text style={styles.noReviewsText}>No reviews yet. Be the first to review!</Text>
+        ) : (
+          reviews.map((review) => (
+            <View key={review.id} style={styles.reviewCard}>
+              <View style={styles.reviewHeader}>
+                <View style={styles.avatar}>
+                  <User size={14} color="#9CA3AF" />
+                </View>
+                <View style={styles.reviewMeta}>
+                  <Text style={styles.reviewUser}>{review.userName}</Text>
+                  <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+                </View>
+                <StarRating rating={review.rating} />
               </View>
-              <View style={styles.reviewMeta}>
-                <Text style={styles.reviewUser}>{review.userName}</Text>
-                <Text style={styles.reviewDate}>{review.date}</Text>
-              </View>
-              <StarRating rating={review.rating} />
+              <Text style={styles.reviewComment}>{review.comment}</Text>
+              
+              {/* Review Attached Images */}
+              {review.images && review.images.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesStrip}>
+                  {review.images.map((img, idx) => (
+                    <Image key={idx} source={{ uri: img }} style={styles.reviewAttachedImage} />
+                  ))}
+                </ScrollView>
+              )}
+
+              {/* Actions for Owner */}
+              {user?.id === review.userId && (
+                <View style={styles.ownerActions}>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(review)}>
+                    <Edit2 size={14} color="#4B5563" />
+                    <Text style={styles.actionBtnText}>Edit</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(review.id)}>
+                    <Trash2 size={14} color="#EF4444" />
+                    <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            <Text style={styles.reviewComment}>{review.comment}</Text>
-          </View>
-        ))}
+          ))
+        )}
       </View>
     </View>
   );
@@ -174,15 +415,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#111111",
   },
+  formActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 },
+  addImageBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: "#F3F4F6", borderRadius: 8 },
+  addImageText: { fontSize: 12, fontWeight: "600", color: "#6B7280" },
   submitBtn: {
     backgroundColor: "#E11D48",
     borderRadius: 12,
     paddingVertical: 12,
-    alignSelf: "flex-start",
     paddingHorizontal: 24,
   },
+  submitBtnDisabled: { opacity: 0.5 },
   submitText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
+  imagePreviewStrip: { marginTop: 8, marginBottom: 4 },
+  previewItem: { position: "relative", marginRight: 10 },
+  previewImage: { width: 60, height: 60, borderRadius: 8, backgroundColor: "#F3F4F6" },
+  removeImageBtn: {
+    position: "absolute", top: -6, right: -6,
+    backgroundColor: "#E11D48", borderRadius: 10,
+    width: 20, height: 20, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#FFF"
+  },
   reviewsList: { gap: 12 },
+  noReviewsText: { fontSize: 13, color: "#9CA3AF", textAlign: "center", fontStyle: "italic", paddingVertical: 16 },
   reviewCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
@@ -192,7 +446,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 6,
     elevation: 3,
-    gap: 8,
+    gap: 10,
   },
   reviewHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   avatar: {
@@ -203,5 +457,10 @@ const styles = StyleSheet.create({
   reviewMeta: { flex: 1 },
   reviewUser: { fontSize: 13, fontWeight: "700", color: "#111111" },
   reviewDate: { fontSize: 10, color: "#9CA3AF" },
-  reviewComment: { fontSize: 13, color: "#6B7280", lineHeight: 18 },
+  reviewComment: { fontSize: 13, color: "#4B5563", lineHeight: 18 },
+  reviewImagesStrip: { marginTop: 4 },
+  reviewAttachedImage: { width: 80, height: 80, borderRadius: 8, marginRight: 8, backgroundColor: "#F3F4F6" },
+  ownerActions: { flexDirection: "row", alignItems: "center", gap: 16, alignSelf: "flex-end", marginTop: 4 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  actionBtnText: { fontSize: 11, fontWeight: "600", color: "#4B5563" },
 });
