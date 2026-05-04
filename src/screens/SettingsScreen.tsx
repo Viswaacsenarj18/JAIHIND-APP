@@ -17,6 +17,25 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const IS_SMALL_SCREEN = SCREEN_WIDTH < 375;
 const IS_TABLET = SCREEN_WIDTH > 600;
 
+const SectionCard = ({ id, activeSection, toggle, iconBg, Icon, iconColor, title, subtitle, children }: any) => (
+  <View style={styles.card}>
+    <TouchableOpacity style={styles.cardHeader} onPress={() => toggle(id)}>
+      <View style={styles.cardLeft}>
+        <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
+          <Icon size={18} color={iconColor} />
+        </View>
+        <View>
+          <Text style={styles.cardTitle}>{title}</Text>
+          <Text style={styles.cardSub}>{subtitle}</Text>
+        </View>
+      </View>
+      <ChevronRight size={18} color="#9CA3AF"
+        style={{ transform: [{ rotate: activeSection === id ? "90deg" : "0deg" }] }} />
+    </TouchableOpacity>
+    {activeSection === id && <View style={styles.cardBody}>{children}</View>}
+  </View>
+);
+
 const SettingsScreen = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   // Privacy
@@ -28,12 +47,13 @@ const SettingsScreen = () => {
   const [cartReminders,  setCartReminders]  = useState(true);
   // Appearance
   const [darkMode, setDarkMode] = useState(false);
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   // Profile
   const [name,    setName]    = useState(user?.name || "");
   const [email,   setEmail]   = useState(user?.email || "");
   const [phone,   setPhone]   = useState(user?.phone || "");
-  const [address, setAddress] = useState("Mumbai, Maharashtra");
+  const [address, setAddress] = useState(user?.address || "");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // Password
   const [currentPw,  setCurrentPw]  = useState("");
@@ -43,24 +63,20 @@ const SettingsScreen = () => {
   const toggle = (key: string) =>
     setActiveSection((prev) => (prev === key ? null : key));
 
-  const SectionCard = ({ id, iconBg, Icon, iconColor, title, subtitle, children }: any) => (
-    <View style={styles.card}>
-      <TouchableOpacity style={styles.cardHeader} onPress={() => toggle(id)}>
-        <View style={styles.cardLeft}>
-          <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
-            <Icon size={18} color={iconColor} />
-          </View>
-          <View>
-            <Text style={styles.cardTitle}>{title}</Text>
-            <Text style={styles.cardSub}>{subtitle}</Text>
-          </View>
-        </View>
-        <ChevronRight size={18} color="#9CA3AF"
-          style={{ transform: [{ rotate: activeSection === id ? "90deg" : "0deg" }] }} />
-      </TouchableOpacity>
-      {activeSection === id && <View style={styles.cardBody}>{children}</View>}
-    </View>
-  );
+  const handleSaveProfile = async () => {
+    if (!updateUserProfile) return;
+    try {
+      setSavingProfile(true);
+      await updateUserProfile(name, phone, address);
+      Alert.alert("Success", "Profile updated successfully");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update profile");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -69,7 +85,7 @@ const SettingsScreen = () => {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Edit Profile ── */}
-        <SectionCard id="profile" iconBg="rgba(225,29,72,0.10)" Icon={User} iconColor="#E11D48"
+        <SectionCard id="profile" activeSection={activeSection} toggle={toggle} iconBg="rgba(225,29,72,0.10)" Icon={User} iconColor="#E11D48"
           title="Edit Profile" subtitle="Name, email, phone, address">
           {/* Avatar */}
           <View style={styles.avatarWrapper}>
@@ -103,15 +119,15 @@ const SettingsScreen = () => {
               textAlignVertical="top" style={[styles.input, styles.textarea]} />
           </View>
           <TouchableOpacity activeOpacity={0.88}
-            onPress={() => Alert.alert("Success", "Profile updated successfully")}>
+            onPress={handleSaveProfile} disabled={savingProfile}>
             <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.saveBtn}>
-              <Text style={styles.saveBtnText}>Save Profile</Text>
+              <Text style={styles.saveBtnText}>{savingProfile ? "Saving..." : "Save Profile"}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </SectionCard>
 
         {/* ── Change Password ── */}
-        <SectionCard id="password" iconBg="#F3F4F6" Icon={Lock} iconColor="#333333"
+        <SectionCard id="password" activeSection={activeSection} toggle={toggle} iconBg="#F3F4F6" Icon={Lock} iconColor="#333333"
           title="Change Password" subtitle="Update your password">
           {[
             { label: "Current Password", value: currentPw, setter: setCurrentPw },
@@ -183,7 +199,7 @@ const SettingsScreen = () => {
         </View>
 
         {/* ── Privacy & Security ── */}
-        <SectionCard id="privacy" iconBg="rgba(239,68,68,0.10)" Icon={Shield} iconColor="#E11D48"
+        <SectionCard id="privacy" activeSection={activeSection} toggle={toggle} iconBg="rgba(239,68,68,0.10)" Icon={Shield} iconColor="#E11D48"
           title="Privacy & Security" subtitle="Manage data and permissions">
           {[
             { label: "Location Access", value: locationAccess,   setter: setLocationAccess },

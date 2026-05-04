@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 interface User {
@@ -9,6 +9,7 @@ interface User {
   email: string;
   phone?: string;
   role?: string;
+  address?: string;
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  updateUserProfile: (name: string, phone: string, address: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               name: data?.name || firebaseUser.displayName || '',
               email: firebaseUser.email || '',
               phone: data?.phone,
+              address: data?.address,
               role: data?.role || 'user',
             });
           } else {
@@ -128,12 +131,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
+  const updateUserProfile = async (name: string, phone: string, address: string) => {
+    if (!user) throw new Error("No user logged in");
+    try {
+      const userRef = doc(db, "users", user.id);
+      await updateDoc(userRef, {
+        name,
+        phone,
+        address,
+        updatedAt: new Date().toISOString()
+      });
+      setUser(prev => prev ? { ...prev, name, phone, address } : null);
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      throw err;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       isAuthenticated: !!user, 
       login, 
       register, 
+      updateUserProfile,
       logout,
       loading 
     }}>
