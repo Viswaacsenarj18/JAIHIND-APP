@@ -18,6 +18,7 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { Product } from "../data/mockData";
 import { useTheme } from "../context/ThemeContext";
+import { wp, hp, rf, IS_TABLET } from "../utils/responsive";
 
 const WishlistScreen = () => {
   const navigation = useNavigation<any>();
@@ -55,7 +56,7 @@ const WishlistScreen = () => {
         <PageHeader title="Wishlist" showBack={true} />
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? "rgba(225,29,72,0.15)" : "rgba(225,29,72,0.08)" }]}>
-            <Heart size={48} color="#E11D48" />
+            <Heart size={rf(48)} color="#E11D48" />
           </View>
           <Text style={[styles.emptyTitle, { color: textPrimary }]}>Your wishlist is empty</Text>
           <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
@@ -120,7 +121,7 @@ const WishlistScreen = () => {
                     style={styles.deleteButton}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Trash2 size={20} color="#E11D48" />
+                    <Trash2 size={rf(20)} color="#E11D48" />
                   </TouchableOpacity>
                 </View>
 
@@ -151,7 +152,7 @@ const WishlistScreen = () => {
                       style={[styles.goToCartButton, isDark && { backgroundColor: "rgba(225,29,72,0.1)", borderColor: "#E11D48" }]}
                       onPress={() => navigation.navigate("Cart")}
                     >
-                      <ShoppingCart size={18} color="#E11D48" />
+                      <ShoppingCart size={rf(18)} color="#E11D48" />
                       <Text style={styles.goToCartText}>Go to Cart</Text>
                     </TouchableOpacity>
                   ) : (
@@ -167,7 +168,7 @@ const WishlistScreen = () => {
                         end={{ x: 1, y: 0 }}
                         style={styles.addToCartButton}
                       >
-                        <ShoppingCart size={18} color="#FFFFFF" />
+                        <ShoppingCart size={rf(18)} color="#FFFFFF" />
                         <Text style={styles.addToCartText}>
                           {item.inStock ? "Add to Cart" : "Out of Stock"}
                         </Text>
@@ -193,12 +194,12 @@ const styles = StyleSheet.create({
   },
 
   listContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: wp(4),
+    paddingBottom: hp(4),
   },
 
   separator: {
-    height: 16,
+    height: hp(1.5),
   },
 
   // Empty State Styles
@@ -206,41 +207,41 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: wp(8),
   },
 
   emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: wp(25),
+    height: wp(25),
+    borderRadius: wp(12.5),
     backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: hp(3),
   },
 
   emptyTitle: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: "700",
     color: "#111827",
-    marginBottom: 8,
+    marginBottom: hp(1),
   },
 
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: hp(4),
   },
 
   exploreButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    paddingHorizontal: wp(8),
+    paddingVertical: hp(1.8),
     borderRadius: 25,
   },
 
   exploreButtonText: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
     color: "#FFFFFF",
   },
@@ -258,17 +259,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
-    padding: 12,
+    padding: wp(3),
   },
 
   imageSection: {
     position: "relative",
-    marginRight: 16,
+    marginRight: wp(4),
   },
 
   productImage: {
-    width: 100,
-    height: 100,
+    width: wp(25),
+    height: wp(25),
     borderRadius: 12,
     backgroundColor: "#F3F4F6",
   },
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
   },
 
   discountText: {
-    fontSize: 10,
+    fontSize: rf(10),
     fontWeight: "800",
     color: "#FFFFFF",
   },
@@ -298,16 +299,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 4,
+    marginBottom: hp(0.5),
   },
 
   productName: {
     flex: 1,
-    fontSize: 15,
+    fontSize: rf(15),
     fontWeight: "600",
     color: "#111827",
-    lineHeight: 20,
-    marginRight: 12,
+    lineHeight: rf(20),
+    marginRight: wp(3),
   },
 
   deleteButton: {
@@ -315,36 +316,36 @@ const styles = StyleSheet.create({
   },
 
   category: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: "#9CA3AF",
     textTransform: "capitalize",
-    marginBottom: 8,
+    marginBottom: hp(1),
   },
 
   priceSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    gap: wp(2),
+    marginBottom: hp(0.5),
   },
 
   currentPrice: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "700",
     color: "#E11D48",
   },
 
   originalPrice: {
-    fontSize: 13,
+    fontSize: rf(13),
     color: "#9CA3AF",
     textDecorationLine: "line-through",
   },
 
   stockStatus: {
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: "600",
     color: "#10B981",
-    marginBottom: 8,
+    marginBottom: hp(1),
   },
 
   outOfStock: {
@@ -364,14 +365,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    height: 40,
+    gap: wp(2),
+    height: hp(5),
     borderRadius: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(4),
   },
 
   addToCartText: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: "600",
     color: "#FFFFFF",
   },
@@ -380,18 +381,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    height: 40,
+    gap: wp(2),
+    height: hp(5),
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: "#E11D48",
     backgroundColor: "#FEF2F2",
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(4),
     flex: 1,
   },
 
   goToCartText: {
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: "600",
     color: "#E11D48",
   },

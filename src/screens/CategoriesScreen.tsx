@@ -14,6 +14,7 @@ import { useProducts } from "../context/ProductContext";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "../context/ThemeContext";
+import { wp, hp, rf, IS_TABLET } from "../utils/responsive";
 
 type RootStackParamList = {
   CategoryDetail: { categoryId: string };
@@ -21,14 +22,14 @@ type RootStackParamList = {
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'CategoryDetail'>;
 
-const NUM_COLUMNS = 2;
-
 const CategoriesScreen = () => {
   const { categories, loading } = useProducts();
   const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const bg = isDark ? "#111827" : "#FFFFFF";
+
+  const NUM_COLUMNS = IS_TABLET ? 3 : 2;
 
   const handleCategoryPress = (categoryId: string) => {
     navigation.navigate('CategoryDetail', { categoryId });
@@ -53,6 +54,7 @@ const CategoriesScreen = () => {
       <PageHeader title="Categories" showBack={true} />
       <FlatList
         data={categories}
+        key={IS_TABLET ? 'tablet' : 'mobile'} // Force re-render when columns change
         keyExtractor={(item) => item.id}
         numColumns={NUM_COLUMNS}
         contentContainerStyle={styles.listContent}
@@ -82,25 +84,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 32,
+    padding: wp(8),
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: hp(1.5),
+    fontSize: rf(14),
     color: "#6B7280",
   },
   listContent: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 100,
+    paddingHorizontal: wp(3),
+    paddingTop: hp(1.5),
+    paddingBottom: hp(12),
   },
   row: {
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: hp(1.5),
   },
   cardWrapper: {
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: wp(1.2),
     aspectRatio: 3 / 2.2,
   },
 });
