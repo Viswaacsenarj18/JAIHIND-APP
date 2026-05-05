@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Modal,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -154,7 +155,13 @@ const LoginScreen = () => {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bounces={false} showsVerticalScrollIndicator={false}>
           <LinearGradient colors={["#E11D48", "#F97316"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-            <View style={styles.logoBox}><Text style={styles.logoText}>JS</Text></View>
+            <View style={styles.logoBox}>
+              <Image 
+                source={require("../../assets/logo.jpg")} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.brandName}>JAIHIND SPORTS</Text>
             <Text style={styles.brandSub}>Your Sports Destination</Text>
           </LinearGradient>
@@ -239,8 +246,20 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   hero: { paddingTop: 56, paddingBottom: 48, alignItems: "center" },
-  logoBox: { width: 64, height: 64, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.20)", alignItems: "center", justifyContent: "center", marginBottom: 12 },
-  logoText: { fontSize: 28, fontWeight: "800", color: "#FFFFFF", letterSpacing: 1 },
+  logoBox: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 16, 
+    backgroundColor: "#FFFFFF", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  logoImage: {
+    width: "100%",
+    height: "100%",
+  },
   brandName: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", letterSpacing: 3 },
   brandSub: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 },
   card: { flex: 1, backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -24, paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 },

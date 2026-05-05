@@ -11,6 +11,7 @@ import {
   Dimensions,
   Share,
   FlatList,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -76,6 +77,7 @@ const ProductDetailScreen = () => {
   // IMAGE CAROUSEL STATE
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const [isZoomVisible, setIsZoomVisible] = useState(false);
 
   const productId = route.params?.productId;
   const product = getProductById(productId);
@@ -168,11 +170,38 @@ const ProductDetailScreen = () => {
                     index,
                   })}
                   renderItem={({ item }) => (
-                    <View style={{ width: SCREEN_WIDTH, height: 300, backgroundColor: imageBg }}>
+                    <TouchableOpacity 
+                      activeOpacity={0.9}
+                      onPress={() => setIsZoomVisible(true)}
+                      style={{ width: SCREEN_WIDTH, height: 300, backgroundColor: imageBg }}
+                    >
                       <Image source={{ uri: item }} style={{ width: SCREEN_WIDTH, height: 300 }} resizeMode="contain" />
-                    </View>
+                    </TouchableOpacity>
                   )}
                 />
+
+                {/* ZOOM MODAL */}
+                <Modal visible={isZoomVisible} transparent animationType="fade" onRequestClose={() => setIsZoomVisible(false)}>
+                  <View style={styles.zoomOverlay}>
+                    <TouchableOpacity style={styles.closeZoom} onPress={() => setIsZoomVisible(false)}>
+                      <Text style={styles.closeZoomText}>Close</Text>
+                    </TouchableOpacity>
+                    <ScrollView 
+                      maximumZoomScale={5} 
+                      minimumZoomScale={1} 
+                      centerContent 
+                      contentContainerStyle={styles.zoomScroll}
+                      showsHorizontalScrollIndicator={false}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      <Image 
+                        source={{ uri: images[activeImage] }} 
+                        style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }} 
+                        resizeMode="contain" 
+                      />
+                    </ScrollView>
+                  </View>
+                </Modal>
                 
                 {/* Navigation Buttons */}
                 {images.length > 1 && (
@@ -403,6 +432,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6B7280",
     fontWeight: "500",
+  },
+  zoomOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  zoomScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeZoom: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 100,
+    padding: 10,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 10,
+  },
+  closeZoomText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   section: { marginTop: 24 },
   sectionTitle: { fontSize: 16, fontWeight: "800", color: "#111111", marginBottom: 12 },

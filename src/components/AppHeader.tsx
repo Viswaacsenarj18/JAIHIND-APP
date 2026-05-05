@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -46,9 +47,13 @@ const AppHeader = () => {
         onPress={() => navigation.navigate("Tabs")}
         activeOpacity={0.8}
       >
-        <LinearGradient colors={["#E11D48", "#9F1239"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoBox}>
-          <Text style={styles.logoText}>JS</Text>
-        </LinearGradient>
+        <View style={styles.logoBox}>
+          <Image 
+            source={require("../../assets/logo.jpg")} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={[styles.brandName, { color: textColor }]}>JAIHIND SPORTS FIT</Text>
       </TouchableOpacity>
 
@@ -97,17 +102,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoBox: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 8,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-  logoText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
   brandName: {
     fontSize: 16,

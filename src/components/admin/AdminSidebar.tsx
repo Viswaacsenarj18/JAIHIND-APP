@@ -2,6 +2,7 @@ import React from "react";
 import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, Modal, Animated, Dimensions,
+  Image,
 } from "react-native";
 import {
   LayoutDashboard,
@@ -67,7 +68,11 @@ const AdminSidebar = ({ open, onClose, activeTab, onTabChange, onLogout }: Admin
       {/* Logo row */}
       <View style={styles.logoRow}>
         <View style={styles.logoIconBox}>
-          <Trophy size={20} color="#FFFFFF" />
+          <Image 
+            source={require("../../../assets/logo.jpg")} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <View>
           <Text style={styles.logoTitle}>JAIHIND</Text>
@@ -147,12 +152,17 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E5E5",
   },
   logoIconBox: {
-    width: 36, 
-    height: 36, 
-    borderRadius: 10,
-    backgroundColor: "#E11D48",
+    width: 40, 
+    height: 40, 
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
     alignItems: "center", 
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
   logoTitle: {
     fontSize: 16, 

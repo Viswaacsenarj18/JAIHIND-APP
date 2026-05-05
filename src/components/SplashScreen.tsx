@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Easing,
   Platform,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -68,7 +69,11 @@ const SplashScreen = ({ onFinish }: SplashScreenProps) => {
       <View style={styles.content}>
         {/* Logo box */}
         <Animated.View style={[styles.logoBox, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
-          <Text style={styles.logoText}>JS</Text>
+          <Image 
+            source={require("../../assets/logo.jpg")} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </Animated.View>
 
         {/* Brand name */}
@@ -103,9 +108,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   logoBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -114,6 +119,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
+    overflow: "hidden",
+  },
+  logoImage: {
+    width: "90%",
+    height: "90%",
   },
   logoText: {
     fontSize: 32,
@@ -125,6 +135,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 4,
+    textAlign: "center",
   },
   tagline: {
     fontSize: 14,

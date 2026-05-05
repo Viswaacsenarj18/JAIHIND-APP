@@ -68,7 +68,7 @@ const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
         <Image
           source={{ uri: category.image }}
           style={StyleSheet.absoluteFill}
-          resizeMode="contain"
+          resizeMode="cover"
         />
 
         {/* Bottom-up dark gradient so text is always readable */}

@@ -10,6 +10,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -136,7 +137,11 @@ const RegisterScreen = () => {
         style={styles.header}
       >
         <View style={styles.logoBox}>
-          <Text style={styles.logoText}>JS</Text>
+          <Image 
+            source={require("../../assets/logo.jpg")} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.brandName}>JAIHIND SPORTS</Text>
       </LinearGradient>
@@ -292,18 +297,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoBox: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.20)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-  logoText: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 1,
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
   brandName: {
     fontSize: 22,
