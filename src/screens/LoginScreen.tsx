@@ -11,6 +11,7 @@ import { Eye, EyeOff, CheckCircle } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../context/AuthContext";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import SuccessModal from "../components/SuccessModal";
 
 const ADMIN_EMAIL = "admin@jaihind.com";
 const ADMIN_PASSWORD = "admin123";
@@ -120,11 +121,15 @@ const LoginScreen = () => {
 
         await adminLogin(ADMIN_EMAIL, ADMIN_PASSWORD);
         setUserType("admin");
-        // App.tsx will auto-redirect when state updates
+        setSuccessModal(true);
+        // Add delay so user sees the professional success modal
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
         await login(cleanEmail, cleanPassword);
         setUserType("user");
-        // App.tsx will auto-redirect when state updates
+        setSuccessModal(true);
+        // Add delay so user sees the professional success modal
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } catch (err: any) {
       setError(err.message || "Login failed");
@@ -136,21 +141,11 @@ const LoginScreen = () => {
   return (
     <SafeAreaView style={styles.safe}>
       {/* ─── Success Modal ─── */}
-      <Modal visible={successModal} transparent animationType="fade">
-        <View style={styles.successOverlay}>
-          <View style={styles.successCard}>
-            <CheckCircle size={60} color="#10B981" strokeWidth={1.5} />
-            <Text style={styles.successTitle}>
-              {userType === "admin" ? "Admin Login Successful!" : "Login Successful!"}
-            </Text>
-            <Text style={styles.successMessage}>
-              {userType === "admin" 
-                ? "Welcome to Admin Dashboard"
-                : "Welcome back! Redirecting..."}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      <SuccessModal 
+        visible={successModal} 
+        title={userType === "admin" ? "Admin Access Granted" : "Welcome Back!"} 
+        message={userType === "admin" ? "Accessing administrative dashboard..." : "Login successful. Preparing your experience..."} 
+      />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bounces={false} showsVerticalScrollIndicator={false}>

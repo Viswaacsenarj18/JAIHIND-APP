@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { CheckCircle } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
+import SuccessModal from "../components/SuccessModal";
 
 type RootStackParamList = {
   Login: undefined;
@@ -121,24 +122,14 @@ const RegisterScreen = () => {
     }
   };
 
-  // Success Modal Component
-  const SuccessModal = () => (
-    <Modal visible={successModal} transparent animationType="fade">
-      <View style={styles.successOverlay}>
-        <View style={styles.successCard}>
-          <CheckCircle size={60} color="#10B981" strokeWidth={1.5} />
-          <Text style={styles.successTitle}>Registration Successful!</Text>
-          <Text style={styles.successMessage}>
-            Your account has been created. Redirecting to login...
-          </Text>
-        </View>
-      </View>
-    </Modal>
-  );
 
   return (
     <SafeAreaView style={styles.safe}>
-      <SuccessModal />
+      <SuccessModal 
+        visible={successModal} 
+        title="Registration Successful!" 
+        message="Your account has been created. Redirecting to login..." 
+      />
 
       {/* Gradient header */}
       <LinearGradient
