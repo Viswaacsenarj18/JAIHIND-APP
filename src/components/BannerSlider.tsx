@@ -44,7 +44,7 @@ const BannerSlider = () => {
         flatListRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
-    }, 4000);
+    }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
