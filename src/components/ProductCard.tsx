@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Heart } from "lucide-react-native";
 import { Product } from "../data/mockData";
 import { useWishlist } from "../context/WishlistContext";
+import { useTheme } from "../context/ThemeContext";
 
 type RootStackParamList = {
   ProductDetail: { productId: string };
@@ -32,6 +33,8 @@ interface Props {
 const ProductCard = ({ product, cardWidth }: Props) => {
   const navigation = useNavigation<NavProp>();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -41,7 +44,7 @@ const ProductCard = ({ product, cardWidth }: Props) => {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width }]}
+      style={[styles.card, { width }, isDark && styles.cardDark]}
       activeOpacity={0.92}
       onPress={() => navigation.navigate("ProductDetail", { productId: product.id })}
     >
@@ -83,18 +86,18 @@ const ProductCard = ({ product, cardWidth }: Props) => {
 
       {/* Info */}
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
-
+        <Text style={[styles.name, isDark && styles.textWhite]} numberOfLines={2}>{product.name}</Text>
+        
         {/* Rating */}
         <View style={styles.ratingRow}>
           <Text style={styles.star}>⭐</Text>
-          <Text style={styles.ratingText}>{product.rating}</Text>
+          <Text style={[styles.ratingText, isDark && styles.textWhite]}>{product.rating}</Text>
           <Text style={styles.reviewText}>({product.reviews})</Text>
         </View>
 
         {/* Price */}
         <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{product.price.toLocaleString("en-IN")}</Text>
+          <Text style={[styles.price, isDark && styles.textWhite]}>₹{product.price.toLocaleString("en-IN")}</Text>
           {product.originalPrice && (
             <Text style={styles.originalPrice}>
               ₹{product.originalPrice.toLocaleString("en-IN")}
@@ -227,5 +230,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#E11D48",
     marginTop: 2,
+  },
+  cardDark: {
+    backgroundColor: "#1F2937",
+    shadowOpacity: 0.25,
+  },
+  textWhite: {
+    color: "#FFFFFF",
   },
 });

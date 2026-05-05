@@ -10,7 +10,12 @@ import {
   User as FirebaseUser 
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
+import { ref, uploadBytes, uploadString, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { updateProfile } from "firebase/auth";
+import * as ImagePicker from "expo-image-picker";
+import { uploadImageToCloudinary } from "../services/cloudinary";
+import { auth, db, storage } from "../firebaseConfig";
+import { Platform } from "react-native";
 
 interface User {
   id: string;
@@ -28,6 +33,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   updateUserProfile: (name: string, phone: string, address: string, avatarUrl: string) => Promise<void>;
+  uploadProfileImage: () => Promise<void>;
   changePassword: (currentPw: string, newPw: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -147,15 +153,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfile = async (name: string, phone: string, address: string, avatarUrl: string) => {
     if (!user) throw new Error("No user logged in");
-    const userRef = doc(db, "users", user.id);
-    await updateDoc(userRef, {
-      name,
-      phone,
-      address,
-      avatarUrl,
+    
+    // 🔥 OPTIMISTIC UPDATE: Update local state immediately for "fastly" feel
+    const optimisticData = {
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      avatarUrl: avatarUrl, // Use local URI temporarily
       updatedAt: new Date().toISOString()
-    });
-    setUser(prev => prev ? { ...prev, name, phone, address, avatarUrl } : null);
+    };
+    setUser(prev => prev ? { ...prev, ...optimisticData } : null);
+
+    let finalAvatarUrl = avatarUrl;
+
+    // If it's a local URI, upload it to Cloudinary (Faster than Firebase Storage in some environments)
+    if (avatarUrl && (avatarUrl.startsWith('file://') || avatarUrl.startsWith('content://') || avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:'))) {
+      try {
+        console.log("☁️ Starting Cloudinary upload for profile...");
+        finalAvatarUrl = await uploadImageToCloudinary(avatarUrl);
+        console.log("✅ Cloudinary upload successful:", finalAvatarUrl);
+      } catch (err: any) {
+        console.error("❌ Profile upload failed:", err.message);
+        // Fallback or alert user, but we'll try to continue with other fields if needed
+        // For now, let's throw to ensure "full working"
+        throw new Error("Failed to upload image to Cloudinary: " + err.message);
+      }
+    }
+
+    // Update Firebase Auth Profile
+    try {
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: name.trim(),
+          photoURL: finalAvatarUrl
+        });
+      }
+    } catch (err: any) {
+      console.warn("⚠️ Auth sync failed:", err.message);
+    }
+
+    console.log("📝 Syncing to Firestore...");
+    const userRef = doc(db, "users", user.id);
+    const updateData = {
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      avatarUrl: finalAvatarUrl,
+      photoURL: finalAvatarUrl,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateDoc(userRef, updateData);
+    console.log("✨ Firestore synced!");
+    
+    // Update local state again with final URL
+    setUser(prev => prev ? { ...prev, ...updateData } : null);
+  };
+
+  const uploadProfileImage = async () => {
+    if (!user) throw new Error("No user logged in");
+    
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        const selectedUri = result.assets[0].uri;
+        console.log("📸 Image selected:", selectedUri);
+        await updateUserProfile(user.name, user.phone || "", user.address || "", selectedUri);
+      }
+    } catch (err: any) {
+      console.error("📸 Image picker error:", err.message);
+      throw err;
+    }
   };
 
   return (
@@ -165,6 +239,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login, 
       register, 
       updateUserProfile,
+      uploadProfileImage,
       changePassword,
       logout,
       loading 

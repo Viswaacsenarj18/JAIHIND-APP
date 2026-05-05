@@ -24,7 +24,7 @@ const Loader = ({ size = "md", text }: LoaderProps) => {
         toValue: 1,
         duration: 700,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     ).start();
   }, [rotation]);

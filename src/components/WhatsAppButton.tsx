@@ -30,12 +30,12 @@ const WhatsAppButton = () => {
       Animated.timing(tooltipOpacity, {
         toValue: showTooltip ? 1 : 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(tooltipX, {
         toValue: showTooltip ? 0 : 8,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [showTooltip]);

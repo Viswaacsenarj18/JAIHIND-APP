@@ -14,7 +14,7 @@ interface SplashScreenProps {
 }
 
 const SplashScreen = ({ onFinish }: SplashScreenProps) => {
-  const useNativeDriver = Platform.OS !== "web";
+  const useNativeDriver = false;
   const logoScale  = useRef(new Animated.Value(0.5)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const titleY     = useRef(new Animated.Value(20)).current;

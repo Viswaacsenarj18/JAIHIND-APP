@@ -6,6 +6,7 @@ import {
   browserSessionPersistence 
 } from "firebase/auth";
 import { getFirestore, initializeFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
@@ -31,5 +32,7 @@ export const auth = initializeAuth(app, { persistence });
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 });
+
+export const storage = getStorage(app);
 
 export default app;

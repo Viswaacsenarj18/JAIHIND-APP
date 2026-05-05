@@ -112,7 +112,7 @@ const WishlistScreen = () => {
               <View style={styles.detailsSection}>
                 {/* Header with name and delete button */}
                 <View style={styles.productHeader}>
-                  <Text style={styles.productName} numberOfLines={2}>
+                  <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <TouchableOpacity
@@ -148,7 +148,7 @@ const WishlistScreen = () => {
                 <View style={styles.actionButtons}>
                   {alreadyInCart ? (
                     <TouchableOpacity
-                      style={styles.goToCartButton}
+                      style={[styles.goToCartButton, isDark && { backgroundColor: "rgba(225,29,72,0.1)", borderColor: "#E11D48" }]}
                       onPress={() => navigation.navigate("Cart")}
                     >
                       <ShoppingCart size={18} color="#E11D48" />

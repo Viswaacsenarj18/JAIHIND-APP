@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Switch, StyleSheet, StatusBar, Animated,
-  Alert, Dimensions,
+  Alert, Dimensions, Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -59,19 +59,70 @@ const SettingsScreen = () => {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Sync state with user data when it changes (e.g. after successful save)
+  React.useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setPhone(user.phone || "");
+      setAddress(user.address || "");
+      setAvatarUrl(user.avatarUrl || "");
+    }
+  }, [user]); // Sync when user object updates (e.g. after save)
+
   const isDark = theme === "dark";
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      setAvatarUrl(result.assets[0].uri);
+    // For Web, Alert.alert with multiple buttons is not well supported.
+    // We'll directly open the picker for a better experience, 
+    // or you can implement a custom Modal.
+    if (Platform.OS === "web") {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.5,
+        });
+        if (!result.canceled) {
+          setAvatarUrl(result.assets[0].uri);
+        }
+      } catch (err: any) {
+        console.error("Picker error:", err);
+      }
+      return;
     }
+
+    Alert.alert(
+      "Profile Photo",
+      "Would you like to change or remove your profile photo?",
+      [
+        {
+          text: "Choose from Library",
+          onPress: async () => {
+            try {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+              });
+              if (!result.canceled) {
+                setAvatarUrl(result.assets[0].uri);
+              }
+            } catch (err: any) {
+              Alert.alert("Error", "Could not pick image: " + err.message);
+            }
+          }
+        },
+        {
+          text: "Remove Current Photo",
+          style: "destructive",
+          onPress: () => setAvatarUrl("")
+        },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
   };
 
   // Password
@@ -160,10 +211,11 @@ const SettingsScreen = () => {
           <View>
             <View style={styles.fieldLabelRow}>
               <MapPin size={12} color="#9CA3AF" />
-              <Text style={styles.fieldLabel}>Address</Text>
+              <Text style={[styles.fieldLabel, isDark && styles.textGray]}>Address</Text>
             </View>
             <TextInput value={address} onChangeText={setAddress} multiline numberOfLines={3}
-              textAlignVertical="top" style={[styles.input, styles.textarea]} />
+              textAlignVertical="top" style={[styles.input, styles.textarea, isDark && styles.inputDark]} 
+              placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"} />
           </View>
           <TouchableOpacity activeOpacity={0.88}
             onPress={handleSaveProfile} disabled={savingProfile}>

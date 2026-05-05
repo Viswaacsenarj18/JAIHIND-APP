@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 // react-native-linear-gradient users swap above for:
 // import LinearGradient from "react-native-linear-gradient";
+import { useTheme } from "../context/ThemeContext";
 
 import { Category } from "../data/mockData";
 
@@ -29,11 +30,13 @@ interface CategoryCardProps {
 const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
   const navigation = useNavigation<NavProp>();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const handlePressIn = () =>
     Animated.spring(scaleAnim, {
       toValue: 0.97,
-      useNativeDriver: true,
+      useNativeDriver: false,
       speed: 50,
       bounciness: 4,
     }).start();
@@ -41,7 +44,7 @@ const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
   const handlePressOut = () =>
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: false,
       speed: 50,
       bounciness: 4,
     }).start();
@@ -50,7 +53,7 @@ const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
 
   return (
     <Animated.View
-      style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}
+      style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }, isDark && styles.wrapperDark]}
     >
       <TouchableOpacity
         activeOpacity={1}
@@ -105,6 +108,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 6,
     elevation: 5,
+  },
+  wrapperDark: {
+    backgroundColor: "#1F2937",
   },
   touchable: {
     flex: 1,
