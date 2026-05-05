@@ -29,7 +29,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RegisterScreen = () => {
   const navigation = useNavigation<NavProp>();
-  const { register } = useAuth();
+  const { register, logout } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,11 +74,19 @@ const RegisterScreen = () => {
     }
     
     setLoading(true);
-    
     try {
-      // Register with correct parameter order (name, email, password)
       await register(name.trim(), email.trim().toLowerCase(), password);
-      // App.tsx handles the routing automatically upon auth state change
+      
+      // Professional Success Flow:
+      setSuccessModal(true);
+      
+      // Sign out immediately so they have to login manually as requested
+      await logout();
+      
+      setTimeout(() => {
+        setSuccessModal(false);
+        navigation.navigate("Login");
+      }, 2500);
     } catch (err: any) {
       console.error("Registration error:", err);
       
@@ -282,7 +290,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "web" ? 40 : 56,
     paddingBottom: Platform.OS === "web" ? 36 : 48,
     alignItems: "center",
-    gap: 12,
   },
   logoBox: {
     width: 64,
@@ -312,7 +319,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
-    gap: 12,
     paddingBottom: 40,
   },
   welcomeTitle: {

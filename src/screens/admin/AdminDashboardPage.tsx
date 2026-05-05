@@ -200,13 +200,12 @@ const styles = StyleSheet.create({
     color: "#6B7280" 
   },
   content: { 
-    padding: 16, 
-    gap: 16 
+    padding: 16
   },
   statsGrid: { 
     flexDirection: "row", 
-    flexWrap: "wrap", 
-    gap: 10 
+    flexWrap: "wrap",
+    justifyContent: "space-between"
   },
   statItem: { 
     width: "48%" 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   collection,
   addDoc,
@@ -123,10 +123,18 @@ export const BannerProvider: React.FC<BannerProviderProps> = ({ children }) => {
         createdAt: serverTimestamp(),
       });
       console.log('✅ Banner added with ID:', docRef.id);
-      Alert.alert('Success', 'Banner added successfully');
+      if (Platform.OS === 'web') {
+        alert('Banner added successfully');
+      } else {
+        Alert.alert('Success', 'Banner added successfully');
+      }
     } catch (error: any) {
       console.error('❌ Error adding banner:', error);
-      Alert.alert('Error', 'Failed to add banner');
+      if (Platform.OS === 'web') {
+        alert('Failed to add banner');
+      } else {
+        Alert.alert('Error', 'Failed to add banner');
+      }
     }
   };
 
@@ -143,20 +151,36 @@ export const BannerProvider: React.FC<BannerProviderProps> = ({ children }) => {
         linkId,
         updatedAt: serverTimestamp(),
       });
-      Alert.alert('Success', 'Banner updated successfully');
+      if (Platform.OS === 'web') {
+        alert('Banner updated successfully');
+      } else {
+        Alert.alert('Success', 'Banner updated successfully');
+      }
     } catch (error: any) {
       console.error('Error updating banner:', error);
-      Alert.alert('Error', 'Failed to update banner');
+      if (Platform.OS === 'web') {
+        alert('Failed to update banner');
+      } else {
+        Alert.alert('Error', 'Failed to update banner');
+      }
     }
   };
 
   const deleteBanner = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'banners', id));
-      Alert.alert('Success', 'Banner deleted successfully');
+      if (Platform.OS === 'web') {
+        alert('Banner deleted successfully');
+      } else {
+        Alert.alert('Success', 'Banner deleted successfully');
+      }
     } catch (error: any) {
       console.error('Error deleting banner:', error);
-      Alert.alert('Error', 'Failed to delete banner');
+      if (Platform.OS === 'web') {
+        alert('Failed to delete banner: ' + error.message);
+      } else {
+        Alert.alert('Error', 'Failed to delete banner');
+      }
     }
   };
 

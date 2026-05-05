@@ -570,7 +570,6 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: IS_SMALL ? 8 : 12,
     paddingHorizontal: IS_SMALL ? 12 : 16,
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",
@@ -581,7 +580,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     height: IS_SMALL ? 40 : 44,
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
@@ -593,12 +591,11 @@ const styles = StyleSheet.create({
   addBtn: { 
     flexDirection: "row", 
     alignItems: "center", 
-    gap: 6, 
     paddingHorizontal: 14, 
     paddingVertical: IS_SMALL ? 8 : 10, 
     borderRadius: 10 
   },
-  addBtnText: { fontSize: IS_SMALL ? 12 : 13, fontWeight: "700", color: "#FFFFFF" },
+  addBtnText: { fontSize: IS_SMALL ? 12 : 13, fontWeight: "700", color: "#FFFFFF", marginLeft: 6 },
   countText: { 
     fontSize: IS_SMALL ? 11 : 12, 
     fontWeight: "600", 
@@ -609,7 +606,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { paddingHorizontal: IS_SMALL ? 12 : 16, paddingBottom: 32, paddingTop: 8 },
-  row: { justifyContent: "flex-start", gap: IS_SMALL ? 10 : 12, marginBottom: IS_SMALL ? 10 : 12 },
+  row: { justifyContent: "flex-start", marginBottom: IS_SMALL ? 10 : 12 },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: IS_SMALL ? 10 : 14,
@@ -626,9 +623,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, 
     backgroundColor: "rgba(0,0,0,0.40)", 
     flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    gap: 12 
+    justifyContent: "center" 
   },
   overlayBtn: { 
     width: IS_SMALL ? 32 : 36, 
@@ -638,7 +633,7 @@ const styles = StyleSheet.create({
     alignItems: "center", 
     justifyContent: "center" 
   },
-  cardInfo: { padding: IS_SMALL ? 8 : 10, alignItems: "center", gap: 2 },
+  cardInfo: { padding: IS_SMALL ? 8 : 10, alignItems: "center" },
   cardIcon: { fontSize: IS_SMALL ? 20 : 24 },
   cardName: { fontSize: IS_SMALL ? 12 : 13, fontWeight: "700", color: "#111111", textAlign: "center" },
   cardCount: { fontSize: IS_SMALL ? 10 : 11, color: "#9CA3AF" },

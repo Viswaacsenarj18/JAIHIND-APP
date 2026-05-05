@@ -111,17 +111,7 @@ const BannerSlider = () => {
               source={{ uri: item.imageUrl }}
               style={styles.image}
               resizeMode="cover"
-            >
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.7)"]}
-                style={styles.overlay}
-              >
-                <Text style={styles.title}>{item.title}</Text>
-                <View style={styles.ctaBtn}>
-                  <Text style={styles.ctaText}>Shop Now</Text>
-                </View>
-              </LinearGradient>
-            </ImageBackground>
+            />
           </TouchableOpacity>
         )}
       />
@@ -157,30 +147,6 @@ const styles = StyleSheet.create({
     height: 180,
     justifyContent: "flex-end",
     backgroundColor: "#F3F4F6",
-  },
-  overlay: {
-    padding: 20,
-    paddingBottom: 25,
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-
-  ctaBtn: {
-    marginTop: 8,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-
-  ctaText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
 
   dotsRow: {

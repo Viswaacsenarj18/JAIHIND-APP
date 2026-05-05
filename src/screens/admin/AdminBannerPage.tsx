@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, Image, FlatList, StyleSheet, Alert, ActivityIndicator, Modal,
+  View, Text, TextInput, TouchableOpacity, Image, FlatList, StyleSheet, Alert, ActivityIndicator, Modal, Platform,
 } from "react-native";
 import { Trash2, Upload, X, Pencil } from "lucide-react-native";
 import { launchImageLibraryAsync, MediaTypeOptions } from 'expo-image-picker';
@@ -99,10 +99,24 @@ const AdminBannerPage = () => {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('Confirm', 'Delete banner?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteBanner(id) }
-    ]);
+    const performDelete = async () => {
+      try {
+        await deleteBanner(id);
+      } catch (err) {
+        console.error('deleteBanner failed:', err);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm("Are you sure you want to delete this banner?")) {
+        performDelete();
+      }
+    } else {
+      Alert.alert('Confirm', 'Delete banner?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: performDelete }
+      ]);
+    }
   };
 
   return (
@@ -125,51 +139,6 @@ const AdminBannerPage = () => {
               <Text style={styles.btnText}>Add by URL</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </View>
-
-        {/* Link Picker */}
-        <View style={styles.linkPickerBox}>
-          <Text style={styles.label}>Link to (Optional)</Text>
-          <View style={styles.linkRow}>
-            {(['none', 'category', 'product'] as const).map(type => (
-              <TouchableOpacity 
-                key={type} 
-                onPress={() => { setLinkType(type); setLinkId(""); }}
-                style={[styles.typeBtn, linkType === type && styles.typeBtnActive]}
-              >
-                <Text style={[styles.typeText, linkType === type && styles.typeTextActive]}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {linkType !== 'none' && (
-            <TouchableOpacity style={styles.selectBtn} onPress={() => setShowLinkDropdown(!showLinkDropdown)}>
-              <Text style={styles.selectText}>
-                {linkId ? (linkType === 'category' ? categories.find(c => c.id === linkId)?.name : allProducts.find(p => p.id === linkId)?.name) : `Select ${linkType}`}
-              </Text>
-              <ChevronDown size={18} color="#6B7280" />
-            </TouchableOpacity>
-          )}
-
-          {showLinkDropdown && linkType !== 'none' && (
-            <View style={styles.dropdown}>
-              <FlatList
-                data={linkType === 'category' ? categories : allProducts}
-                keyExtractor={item => item.id}
-                style={{ maxHeight: 200 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.dropdownItem} 
-                    onPress={() => { setLinkId(item.id); setShowLinkDropdown(false); }}
-                  >
-                    <Text style={styles.dropdownText}>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-          )}
         </View>
       </View>
 
@@ -268,21 +237,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F8F8", paddingHorizontal: 14, paddingVertical: 12 },
   title: { fontSize: 18, fontWeight: "800", color: "#111111", marginBottom: 4 },
   subtitle: { fontSize: 12, color: "#9CA3AF", marginBottom: 16 },
-  inputSection: { gap: 10, marginBottom: 16 },
+  inputSection: { marginBottom: 16 },
   input: { height: 44, backgroundColor: "#FFFFFF", borderRadius: 10, borderWidth: 1, borderColor: "#E5E5E5", paddingHorizontal: 12, fontSize: 14, color: "#111111" },
-  buttonRow: { flexDirection: "row", gap: 10 },
+  buttonRow: { flexDirection: "row" },
   uploadBtn: { flex: 1, height: 48, borderRadius: 12, overflow: "hidden" },
   urlBtn: { flex: 1, height: 48, borderRadius: 12, overflow: "hidden" },
   gradientBtn: { flex: 1, alignItems: "center", justifyContent: "center" },
   btnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  list: { gap: 12, paddingBottom: 20 },
+  list: { paddingBottom: 20 },
   card: { backgroundColor: "#FFFFFF", borderRadius: 14, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
   image: { width: "100%", aspectRatio: 16 / 9, backgroundColor: "#F3F4F6" },
-  cardInfo: { padding: 12, gap: 8 },
+  cardInfo: { padding: 12 },
   bannerTitle: { fontSize: 14, fontWeight: "700", color: "#111111" },
-  actionsRow: { flexDirection: "row", gap: 8 },
-  actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
+  actionsRow: { flexDirection: "row" },
+  actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
   editBtn: { backgroundColor: "rgba(59,130,246,0.10)" },
   editText: { fontSize: 12, fontWeight: "700", color: "#3B82F6" },
   deleteBtn: { backgroundColor: "rgba(225,29,72,0.10)" },
@@ -295,24 +264,14 @@ const styles = StyleSheet.create({
   urlModalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   urlModalTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
   urlInput: { height: 48, backgroundColor: "#F3F4F6", borderRadius: 10, borderWidth: 1, borderColor: "#E5E5E5", paddingHorizontal: 12, fontSize: 14, color: "#111111", marginBottom: 12 },
-  urlModalButtons: { flexDirection: "row", gap: 12 },
+  urlModalButtons: { flexDirection: "row" },
   urlModalButton: { flex: 1, height: 44, borderRadius: 10, overflow: "hidden" },
   cancelButton: { backgroundColor: "#F3F4F6", justifyContent: "center", alignItems: "center" },
   cancelButtonText: { fontSize: 14, fontWeight: "600", color: "#6B7280" },
   addButton: { overflow: "hidden" },
   addButtonGradient: { flex: 1, justifyContent: "center", alignItems: "center" },
   addButtonText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
-  linkPickerBox: { marginTop: 12, gap: 8 },
-  label: { fontSize: 13, fontWeight: "700", color: "#374151" },
-  linkRow: { flexDirection: "row", gap: 8 },
-  typeBtn: { flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: 8, backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E5E5" },
-  typeBtnActive: { backgroundColor: "#E11D48", borderColor: "#E11D48" },
-  typeText: { fontSize: 12, fontWeight: "600", color: "#6B7280" },
-  typeTextActive: { color: "#FFF" },
-  selectBtn: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#FFF", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "#E5E5E5" },
-  selectText: { fontSize: 14, color: "#111", fontWeight: "600" },
-  dropdown: { backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 10, marginTop: 4, overflow: "hidden" },
-  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
-  dropdownText: { fontSize: 14, color: "#374151" },
+  addButtonGradient: { flex: 1, justifyContent: "center", alignItems: "center" },
+  addButtonText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
 });
 

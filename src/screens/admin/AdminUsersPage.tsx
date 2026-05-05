@@ -14,6 +14,7 @@ interface FirestoreUser {
   email: string;
   createdAt?: any;
   phone?: string;
+  role?: string;
 }
 
 const AdminUsersPage = () => {
@@ -23,22 +24,29 @@ const AdminUsersPage = () => {
 
   // 🔥 REAL-TIME USERS FROM FIRESTORE
   useEffect(() => {
+    console.log("🔄 AdminUsersPage: Setting up users listener...");
     const q = query(collection(db, "users"));
     const unsub = onSnapshot(q,
       (snapshot) => {
-        const userList: FirestoreUser[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name || "Unknown",
-          email: doc.data().email || "",
-          createdAt: doc.data().createdAt,
-          phone: doc.data().phone || "",
-        }));
+        console.log(`✅ AdminUsersPage: Snapshot received with ${snapshot.docs.length} documents`);
+        const userList: FirestoreUser[] = snapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log(`👤 User found: ID=${doc.id}, Name=${data.name}, Email=${data.email}, Role=${data.role}`);
+          return {
+            id: doc.id,
+            name: data.name || "Unknown",
+            email: data.email || "",
+            createdAt: data.createdAt,
+            phone: data.phone || "",
+            role: data.role || "user",
+          };
+        });
         setUsers(userList);
         setLoading(false);
       },
       (error) => {
-        console.error("Users fetch error:", error);
-        Alert.alert("Error", "Failed to load users");
+        console.error("❌ AdminUsersPage: Users fetch error:", error);
+        Alert.alert("Error", "Failed to load users: " + error.message);
         setLoading(false);
       }
     );
@@ -55,12 +63,28 @@ const AdminUsersPage = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    const performDelete = async () => {
+      try {
+        await deleteDoc(doc(db, "users", id));
+        if (Platform.OS === 'web') {
+          alert(`User "${name}" deleted successfully`);
+        } else {
+          Alert.alert("Success", `User "${name}" deleted`);
+        }
+      } catch (error: any) {
+        notifyError("Delete failed", error.message || String(error));
+      }
+    };
 
-    try {
-      await deleteDoc(doc(db, "users", id));
-      Alert.alert("Success", `User "${name}" deleted`);
-    } catch (error: any) {
-      notifyError("Delete failed", error.message || String(error));
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert("Delete User", `Are you sure you want to delete user "${name}"?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: performDelete },
+      ]);
     }
   };
 
@@ -101,13 +125,23 @@ const AdminUsersPage = () => {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
             </View>
-            <View style={styles.info}>
-              <Text style={styles.name}>{item.name}</Text>
+            <View style={[styles.info, { marginLeft: 12 }]}>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{item.name}</Text>
+                {item.role && (
+                  <View style={[styles.roleBadge, { backgroundColor: item.role === 'admin' ? '#FEE2E2' : '#E0F2FE' }]}>
+                    <Text style={[styles.roleText, { color: item.role === 'admin' ? '#E11D48' : '#0369A1' }]}>{item.role}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
+              {item.phone ? (
+                <Text style={styles.phone}>{item.phone}</Text>
+              ) : null}
               <Text style={styles.meta}>Joined: {formatDate(item.createdAt)}</Text>
             </View>
             <View style={styles.actions}>
-              <TouchableOpacity onPress={() => setSelected(item)} style={styles.actionBtn}>
+              <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { marginRight: 6 }]}>
                 <Eye size={15} color="#6B7280" />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={[styles.actionBtn, styles.deleteBtn]}>
@@ -124,6 +158,7 @@ const AdminUsersPage = () => {
               { label: "Name", value: selected.name },
               { label: "Email", value: selected.email || "N/A" },
               { label: "Phone", value: selected.phone || "N/A" },
+              { label: "Role", value: selected.role?.toUpperCase() || "USER" },
               { label: "User ID", value: selected.id },
               { label: "Joined", value: formatDate(selected.createdAt) },
             ].map(({ label, value }) => (
@@ -148,20 +183,24 @@ const styles = StyleSheet.create({
   count: { fontSize: 13, color: "#6B7280", paddingHorizontal: 14, paddingVertical: 10 },
   list: { paddingHorizontal: 14, paddingBottom: 32 },
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: "#F0F0F0" },
-  row: { flexDirection: "row", alignItems: "center", paddingVertical: 12, gap: 12, backgroundColor: "#FFFFFF", borderRadius: 12, marginBottom: 8, paddingHorizontal: 12 },
+  row: { flexDirection: "row", alignItems: "center", paddingVertical: 12, backgroundColor: "#FFFFFF", borderRadius: 12, marginBottom: 8, paddingHorizontal: 12 },
   avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#E11D48", alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 16, fontWeight: "800", color: "#FFFFFF" },
   info: { flex: 1 },
   name: { fontSize: 14, fontWeight: "700", color: "#111111" },
   email: { fontSize: 12, color: "#9CA3AF", marginTop: 1 },
+  phone: { fontSize: 12, color: "#6B7280", marginTop: 1, fontWeight: "500" },
   meta: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
-  actions: { flexDirection: "row", gap: 6 },
+  actions: { flexDirection: "row" },
   actionBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center" },
   deleteBtn: { backgroundColor: "rgba(225,29,72,0.08)" },
-  detail: { gap: 2 },
+  detail: { },
   detailRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#F0F0F0" },
   detailLabel: { fontSize: 12, color: "#9CA3AF", fontWeight: "600" },
   detailValue: { fontSize: 13, color: "#111111", fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 12 },
+  nameRow: { flexDirection: "row", alignItems: "center" },
+  roleBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8 },
+  roleText: { fontSize: 9, fontWeight: "800", textTransform: "uppercase" },
   emptyContainer: { padding: 32, alignItems: "center" },
   emptyText: { fontSize: 16, color: "#9CA3AF" },
 });
