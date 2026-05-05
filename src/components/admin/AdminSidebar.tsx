@@ -16,6 +16,8 @@ import {
   Trophy,
   Image as ImageIcon,
   Star,
+  History,
+  BarChart3,
 } from "lucide-react-native";
 
 export type AdminTab =
@@ -26,6 +28,8 @@ export type AdminTab =
   | "Users"
   | "Banners"
   | "Reviews"
+  | "History"
+  | "Analysis"
   | "Settings";
 
 const navItems = [
@@ -36,6 +40,8 @@ const navItems = [
   { label: "Users",      Icon: Users },
   { label: "Banners",    Icon: ImageIcon },
   { label: "Reviews",    Icon: Star },
+  { label: "History",    Icon: History },
+  { label: "Analysis",   Icon: BarChart3 },
   { label: "Settings",   Icon: Settings },
 ];
 

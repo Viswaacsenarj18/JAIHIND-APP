@@ -38,6 +38,8 @@ import AdminUsersPage from "./src/screens/admin/AdminUsersPage";
 import AdminSettingsPage from "./src/screens/admin/AdminSettingsPage";
 import AdminBannerPage from "./src/screens/admin/AdminBannerPage";
 import AdminReviewsPage from "./src/screens/admin/AdminReviewsPage";
+import AdminHistoryPage from "./src/screens/admin/AdminHistoryPage";
+import AdminAnalysisPage from "./src/screens/admin/AdminAnalysisPage";
 
 /* AUTH */
 import LoginScreen from "./src/screens/LoginScreen";
@@ -112,6 +114,8 @@ const AdminPanel = ({ navigation }: any) => {
       case "Settings": return <AdminSettingsPage onLogout={handleLogout} />;
       case "Banners": return <AdminBannerPage />;
       case "Reviews": return <AdminReviewsPage />;
+      case "History": return <AdminHistoryPage />;
+      case "Analysis": return <AdminAnalysisPage />;
       default: return <AdminDashboardPage />;
     }
   };
