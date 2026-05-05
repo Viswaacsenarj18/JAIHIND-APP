@@ -186,12 +186,6 @@ const ProfileScreen = () => {
       screen: "Cart",
     },
     {
-      Icon: Bell,
-      label: "Notifications",
-      subtitle: "Updates & alerts",
-      screen: "Notifications",
-    },
-    {
       Icon: MapPin,
       label: "Saved Addresses",
       subtitle: "Manage delivery addresses",

@@ -6,17 +6,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, Package, ShoppingCart, Tag, Info, CheckCheck } from "lucide-react-native";
 import PageHeader from "../components/PageHeader";
+import { useTheme } from "../context/ThemeContext";
 
 interface Notification {
   id: string; type: string; title: string; message: string; read: boolean; time: string;
 }
 
-const mockNotifs: Notification[] = [
-  { id: "n1", type: "order", title: "Order Shipped!",  message: "Your order #1234 is on the way.", read: false, time: "2 min ago" },
-  { id: "n2", type: "promo", title: "Flash Sale 🔥",   message: "Up to 60% off today only.",        read: false, time: "1 hr ago"  },
-  { id: "n3", type: "cart",  title: "Still in cart",   message: "Complete your purchase now.",       read: true,  time: "3 hr ago"  },
-  { id: "n4", type: "info",  title: "Welcome!",         message: "Thanks for joining Jaihind Sports.", read: true, time: "1 day ago" },
-];
+const mockNotifs: Notification[] = [];
 
 const typeIcon: Record<string, React.ElementType> = {
   order: Package, cart: ShoppingCart, promo: Tag, info: Info,
@@ -29,6 +25,13 @@ const typeColor: Record<string, { bg: string; icon: string }> = {
 };
 
 const NotificationsScreen = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const bg = isDark ? "#111827" : "#F8F8F8";
+  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const titleColor = isDark ? "#FFFFFF" : "#111111";
+  const msgColor = isDark ? "#9CA3AF" : "#6B7280";
+
   const [notifs, setNotifs] = useState<Notification[]>(mockNotifs);
   const unread = notifs.filter((n) => !n.read).length;
 
@@ -38,19 +41,19 @@ const NotificationsScreen = () => {
 
   if (notifs.length === 0) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <PageHeader title="Notifications" />
         <View style={styles.empty}>
-          <View style={styles.emptyIcon}><Bell size={32} color="#9CA3AF" /></View>
-          <Text style={styles.emptyTitle}>No notifications</Text>
-          <Text style={styles.emptySub}>You're all caught up!</Text>
+          <View style={[styles.emptyIcon, isDark && { backgroundColor: "#1F2937" }]}><Bell size={32} color={isDark ? "#9CA3AF" : "#9CA3AF"} /></View>
+          <Text style={[styles.emptyTitle, isDark && { color: "#FFFFFF" }]}>No notifications</Text>
+          <Text style={[styles.emptySub, isDark && { color: "#9CA3AF" }]}>You're all caught up!</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <PageHeader title="Notifications"
         right={unread > 0 ? (
           <TouchableOpacity onPress={markAllRead} style={styles.markAllBtn}>
@@ -65,14 +68,14 @@ const NotificationsScreen = () => {
           const c    = typeColor[n.type] || typeColor.info;
           return (
             <TouchableOpacity key={n.id} onPress={() => markRead(n.id)}
-              style={[styles.card, !n.read && styles.cardUnread]} activeOpacity={0.75}>
+              style={[styles.card, { backgroundColor: cardBg }, !n.read && styles.cardUnread]} activeOpacity={0.75}>
               <View style={[styles.iconCircle, { backgroundColor: c.bg }]}>
                 <Icon size={18} color={c.icon} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.cardTop}>
                   <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-                    <Text style={[styles.cardTitle, !n.read && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
+                    <Text style={[styles.cardTitle, { color: titleColor }, !n.read && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
                     {!n.read && <View style={styles.dot} />}
                   </View>
                   <TouchableOpacity 
@@ -83,7 +86,7 @@ const NotificationsScreen = () => {
                     <Text style={{ color: "#9CA3AF", fontSize: 16, fontWeight: "600" }}>✕</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.cardMsg} numberOfLines={2}>{n.message}</Text>
+                <Text style={[styles.cardMsg, { color: msgColor }]} numberOfLines={2}>{n.message}</Text>
                 <Text style={styles.cardTime}>{n.time}</Text>
               </View>
             </TouchableOpacity>
