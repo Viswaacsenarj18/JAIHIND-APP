@@ -9,7 +9,7 @@ import {
   EmailAuthProvider,
   User as FirebaseUser 
 } from "firebase/auth";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, uploadString, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import * as ImagePicker from "expo-image-picker";
@@ -30,8 +30,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (emailOrPhone: string, password: string) => Promise<void>;
+  register: (name: string, email: string, phone: string, password: string) => Promise<void>;
   updateUserProfile: (name: string, phone: string, address: string, avatarUrl: string) => Promise<void>;
   uploadProfileImage: () => Promise<void>;
   changePassword: (currentPw: string, newPw: string) => Promise<void>;
@@ -113,17 +113,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (emailOrPhone: string, password: string) => {
+    let email = emailOrPhone.trim().toLowerCase();
+    
+    // Check if input is a phone number (not containing @)
+    if (!email.includes("@")) {
+      console.log("🔍 Login input looks like a phone number, searching Firestore...");
+      const q = query(collection(db, "users"), where("phone", "==", emailOrPhone.trim()));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        email = snap.docs[0].data().email;
+        console.log("✅ Found associated email:", email);
+      } else {
+        throw new Error("No account found with this phone number");
+      }
+    }
+    
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, phone: string, password: string) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     const uid = result.user.uid;
     const isAdmin = email.trim().toLowerCase() === "admin@jaihind.com";
     const userData = {
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      phone: phone.trim(),
       role: isAdmin ? 'admin' : 'user',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

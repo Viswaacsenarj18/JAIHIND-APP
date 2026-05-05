@@ -7,6 +7,7 @@ import { Trash2, Eye } from "lucide-react-native";
 import { collection, query, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import ModalForm from "../../components/admin/ModalForm";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 
 interface FirestoreUser {
   id: string;
@@ -21,6 +22,8 @@ const AdminUsersPage = () => {
   const [users, setUsers] = useState<FirestoreUser[]>([]);
   const [selected, setSelected] = useState<FirestoreUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { admin } = useAdminAuth();
 
   // 🔥 REAL-TIME USERS FROM FIRESTORE
   useEffect(() => {
@@ -62,9 +65,18 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = async (item: FirestoreUser) => {
+    const { id, name, email } = item;
+    
+    // Prevent self-deletion
+    if (admin?.email === email) {
+      notifyError("Cannot Delete", "You cannot delete your own admin account.");
+      return;
+    }
+
     const performDelete = async () => {
       try {
+        setDeletingId(id);
         await deleteDoc(doc(db, "users", id));
         if (Platform.OS === 'web') {
           alert(`User "${name}" deleted successfully`);
@@ -73,6 +85,8 @@ const AdminUsersPage = () => {
         }
       } catch (error: any) {
         notifyError("Delete failed", error.message || String(error));
+      } finally {
+        setDeletingId(null);
       }
     };
 
@@ -144,8 +158,16 @@ const AdminUsersPage = () => {
               <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { marginRight: 6 }]}>
                 <Eye size={15} color="#6B7280" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={[styles.actionBtn, styles.deleteBtn]}>
-                <Trash2 size={15} color="#E11D48" />
+              <TouchableOpacity 
+                onPress={() => handleDelete(item)} 
+                style={[styles.actionBtn, styles.deleteBtn]}
+                disabled={deletingId === item.id}
+              >
+                {deletingId === item.id ? (
+                  <ActivityIndicator size="small" color="#E11D48" />
+                ) : (
+                  <Trash2 size={15} color="#E11D48" />
+                )}
               </TouchableOpacity>
             </View>
           </View>

@@ -172,8 +172,8 @@ const LoginScreen = () => {
 
             {!!error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
-            <Text style={styles.label}>Email</Text>
-            <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#94A3B8" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="next" />
+            <Text style={styles.label}>Email or Phone Number</Text>
+            <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="you@example.com or 10-digit phone" placeholderTextColor="#94A3B8" keyboardType="default" autoCapitalize="none" autoCorrect={false} returnKeyType="next" />
 
             <Text style={styles.label}>Password</Text>
             <View style={styles.pwWrapper}>

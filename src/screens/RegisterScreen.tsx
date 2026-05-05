@@ -33,6 +33,7 @@ const RegisterScreen = () => {
   const { register, logout } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,6 +64,16 @@ const RegisterScreen = () => {
       setError("Please enter a valid email address (e.g., name@example.com)");
       return;
     }
+
+    if (!phone.trim()) {
+      setError("Please enter your phone number");
+      return;
+    }
+
+    if (phone.trim().length < 10) {
+      setError("Phone number must be at least 10 digits");
+      return;
+    }
     
     if (!password) {
       setError("Please enter a password");
@@ -76,7 +87,7 @@ const RegisterScreen = () => {
     
     setLoading(true);
     try {
-      await register(name.trim(), email.trim().toLowerCase(), password);
+      await register(name.trim(), email.trim().toLowerCase(), phone.trim(), password);
       
       // Professional Success Flow:
       setSuccessModal(true);
@@ -190,6 +201,19 @@ const RegisterScreen = () => {
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
+            returnKeyType="next"
+            style={styles.input}
+            editable={!loading}
+          />
+
+          {/* Phone Input */}
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Your phone number"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="phone-pad"
             returnKeyType="next"
             style={styles.input}
             editable={!loading}
