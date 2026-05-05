@@ -148,7 +148,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      console.log("🚪 Logging out...");
+      await signOut(auth);
+      setUser(null); // Explicitly clear state to trigger immediate navigation update
+      console.log("✅ Logout successful");
+    } catch (err: any) {
+      console.error("❌ Logout error:", err.message);
+      setUser(null); // Force clear state even on error to ensure user is "logged out" locally
+    }
   };
 
   const updateUserProfile = async (name: string, phone: string, address: string, avatarUrl: string) => {

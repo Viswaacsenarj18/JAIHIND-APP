@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -120,24 +121,46 @@ const ProfileScreen = () => {
   };
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        onPress: () => {},
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        onPress: async () => {
-          try {
-            await logout();
-          } catch (error: any) {
-            Alert.alert("Error", error.message || "Logout failed");
-          }
+    console.log("👆 Logout button pressed");
+    
+    const performLogout = async () => {
+      try {
+        console.log("🏃 Proceeding with logout...");
+        await logout();
+        console.log("👋 Logout function finished, resetting navigation...");
+        // Force reset navigation to Login screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Login" as any }],
+        });
+      } catch (error: any) {
+        console.error("❌ Logout error caught in component:", error);
+        if (Platform.OS === 'web') {
+          alert("Logout failed: " + error.message);
+        } else {
+          Alert.alert("Error", error.message || "Logout failed");
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm("Are you sure you want to logout?")) {
+        await performLogout();
+      }
+    } else {
+      Alert.alert("Logout", "Are you sure you want to logout?", [
+        {
+          text: "Cancel",
+          onPress: () => console.log("❌ Logout cancelled"),
+          style: "cancel",
         },
-        style: "destructive",
-      },
-    ]);
+        {
+          text: "Logout",
+          onPress: performLogout,
+          style: "destructive",
+        },
+      ]);
+    }
   };
 
   const menuItems = [
