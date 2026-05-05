@@ -52,7 +52,7 @@ const WishlistScreen = () => {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-        <PageHeader title="Wishlist" showBack={false} />
+        <PageHeader title="Wishlist" showBack={true} />
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? "rgba(225,29,72,0.15)" : "rgba(225,29,72,0.08)" }]}>
             <Heart size={48} color="#E11D48" />
@@ -74,7 +74,7 @@ const WishlistScreen = () => {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-      <PageHeader title={`Wishlist (${items.length})`} showBack={false} />
+      <PageHeader title={`Wishlist (${items.length})`} showBack={true} />
       
       <FlatList
         data={items}

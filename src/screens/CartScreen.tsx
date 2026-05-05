@@ -30,7 +30,7 @@ const CartScreen = () => {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-        <PageHeader title="Cart" showBack={false} />
+        <PageHeader title="Cart" showBack={true} />
         <View style={styles.empty}>
           <View style={[styles.emptyIcon, { backgroundColor: iconBg }]}><ShoppingBag size={32} color="#9CA3AF" /></View>
           <Text style={[styles.emptyTitle, { color: textPrimary }]}>Your cart is empty</Text>
@@ -48,7 +48,7 @@ const CartScreen = () => {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-      <PageHeader title={`Cart (${totalItems})`} showBack={false} />
+      <PageHeader title={`Cart (${totalItems})`} showBack={true} />
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {items.map((item) => (
           <View key={item.product.id} style={[styles.card, { backgroundColor: cardBg }]}>

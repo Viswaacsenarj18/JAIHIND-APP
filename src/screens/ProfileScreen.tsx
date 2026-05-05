@@ -215,7 +215,7 @@ const ProfileScreen = () => {
   if (!isAuthenticated || loading) {
     return (
       <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
-        <PageHeader title="Profile" showBack={false} />
+        <PageHeader title="Profile" showBack={true} />
         <View style={styles.guestContainer}>
           <View style={[styles.guestAvatar, isDark && styles.guestAvatarDark]}>
             <User size={40} color={isDark ? "#FFFFFF" : "#9CA3AF"} />
@@ -259,7 +259,7 @@ const ProfileScreen = () => {
       />
       <PageHeader
         title="Profile"
-        showBack={false}
+        showBack={true}
         right={
           <TouchableOpacity
             style={[styles.editBtn, isDark && styles.editBtnDark]}

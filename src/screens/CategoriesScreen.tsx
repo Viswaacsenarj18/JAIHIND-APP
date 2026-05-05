@@ -38,7 +38,7 @@ const CategoriesScreen = () => {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-        <PageHeader title="Categories" showBack={false} />
+        <PageHeader title="Categories" showBack={true} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#E11D48" />
           <Text style={[styles.loadingText, isDark && { color: "#9CA3AF" }]}>Loading categories...</Text>
@@ -50,7 +50,7 @@ const CategoriesScreen = () => {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-      <PageHeader title="Categories" showBack={false} />
+      <PageHeader title="Categories" showBack={true} />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
