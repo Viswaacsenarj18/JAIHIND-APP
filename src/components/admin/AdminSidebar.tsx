@@ -14,6 +14,7 @@ import {
   X,
   Trophy,
   Image as ImageIcon,
+  Star,
 } from "lucide-react-native";
 
 export type AdminTab =
@@ -23,6 +24,7 @@ export type AdminTab =
   | "Orders"
   | "Users"
   | "Banners"
+  | "Reviews"
   | "Settings";
 
 const navItems = [
@@ -32,6 +34,7 @@ const navItems = [
   { label: "Orders",     Icon: ShoppingCart },
   { label: "Users",      Icon: Users },
   { label: "Banners",    Icon: ImageIcon },
+  { label: "Reviews",    Icon: Star },
   { label: "Settings",   Icon: Settings },
 ];
 

@@ -380,11 +380,6 @@ const ReviewSection = ({ productId }: { productId: string }) => {
                     <Edit2 size={14} color={isDark ? "#9CA3AF" : "#4B5563"} />
                     <Text style={[styles.actionBtnText, { color: isDark ? "#9CA3AF" : "#4B5563" }]}>Edit</Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(review.id)}>
-                    <Trash2 size={14} color="#EF4444" />
-                    <Text style={[styles.actionBtnText, { color: "#EF4444" }]}>Delete</Text>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
