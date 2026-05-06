@@ -98,6 +98,10 @@ const AdminPanel = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<AdminTab>("Dashboard");
   const { adminLogout, admin } = useAdminAuth();
   const { logout, user } = useAuth();
+  const { adminTheme } = useTheme();
+
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F9FAFB";
 
   const handleLogout = async () => {
     adminLogout();
@@ -121,13 +125,14 @@ const AdminPanel = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <AdminHeader
         title={activeTab}
         onMenuToggle={() => setSidebarOpen(true)}
         adminName={admin?.name || "Admin"}
       />
-      <View style={{ flex: 1 }}>{renderPage()}</View>
+      <View style={{ flex: 1, backgroundColor: bg }}>{renderPage()}</View>
       <AdminBottomNav activeTab={activeTab as any} onTabChange={setActiveTab} />
       <AdminSidebar
         open={sidebarOpen}

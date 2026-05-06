@@ -19,6 +19,7 @@ import {
   History,
   BarChart3,
 } from "lucide-react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 export type AdminTab =
   | "Dashboard"
@@ -53,90 +54,100 @@ interface AdminSidebarProps {
   onLogout:    () => void;
 }
 
-const SIDEBAR_WIDTH = 260;
+const SIDEBAR_WIDTH = 280;
 
-const AdminSidebar = ({ open, onClose, activeTab, onTabChange, onLogout }: AdminSidebarProps) => (
-  <Modal 
-    visible={open} 
-    transparent 
-    animationType="slide" 
-    onRequestClose={onClose}
-  >
-    {/* Backdrop */}
-    <TouchableOpacity 
-      style={styles.backdrop} 
-      activeOpacity={1} 
-      onPress={onClose} 
-    />
+const AdminSidebar = ({ open, onClose, activeTab, onTabChange, onLogout }: AdminSidebarProps) => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
+  const btnBg = isDark ? "#222222" : "#F3F4F6";
 
-    {/* Drawer */}
-    <View style={styles.drawer}>
-      {/* Logo row */}
-      <View style={styles.logoRow}>
-        <View style={styles.logoIconBox}>
-          <Image 
-            source={require("../../../assets/logo.jpg")} 
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+  return (
+    <Modal 
+      visible={open} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={onClose}
+    >
+      {/* Backdrop */}
+      <TouchableOpacity 
+        style={styles.backdrop} 
+        activeOpacity={1} 
+        onPress={onClose} 
+      />
+
+      {/* Drawer */}
+      <View style={[styles.drawer, { backgroundColor: bg, borderRightColor: borderColor }]}>
+        {/* Header Section */}
+        <View style={[styles.logoRow, { borderBottomColor: borderColor }]}>
+          <View style={[styles.logoIconBox, { backgroundColor: isDark ? "#222222" : "#FFFFFF" }]}>
+            <Image 
+              source={require("../../../assets/logo.jpg")} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+          <View>
+            <Text style={[styles.logoTitle, { color: textColor }]}>JAIHIND</Text>
+            <Text style={[styles.logoSub, { color: subTextColor }]}>Admin Panel</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: btnBg }]}>
+            <X size={20} color={subTextColor} />
+          </TouchableOpacity>
         </View>
-        <View>
-          <Text style={styles.logoTitle}>JAIHIND</Text>
-          <Text style={styles.logoSub}>Admin Panel</Text>
+
+        {/* Navigation Section */}
+        <ScrollView style={styles.nav} showsVerticalScrollIndicator={false}>
+          {navItems.map(({ label, Icon }) => {
+            const active = activeTab === label;
+            return (
+              <TouchableOpacity
+                key={label}
+                style={[styles.navItem, active && styles.navItemActive]}
+                onPress={() => { 
+                  onTabChange(label as AdminTab); 
+                  onClose(); 
+                }}
+                activeOpacity={0.75}
+              >
+                <Icon size={20} color={active ? "#FFFFFF" : subTextColor} />
+                <Text style={[styles.navLabel, { color: subTextColor }, active && styles.navLabelActive]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Footer Section */}
+        <View style={[styles.logoutArea, { borderTopColor: borderColor }]}>
+          <TouchableOpacity
+            style={[styles.logoutBtn, isDark && { backgroundColor: "rgba(225,29,72,0.15)" }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onLogout();
+              onClose();
+            }}
+            activeOpacity={0.8}
+          >
+            <LogOut size={18} color="#E11D48" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-          <X size={20} color="#6B7280" />
-        </TouchableOpacity>
       </View>
-
-      {/* Nav items */}
-      <ScrollView style={styles.nav} showsVerticalScrollIndicator={false}>
-        {navItems.map(({ label, Icon }) => {
-          const active = activeTab === label;
-          return (
-            <TouchableOpacity
-              key={label}
-              style={[styles.navItem, active && styles.navItemActive]}
-              onPress={() => { 
-                onTabChange(label as AdminTab); 
-                onClose(); 
-              }}
-              activeOpacity={0.75}
-            >
-              <Icon size={20} color={active ? "#FFFFFF" : "#6B7280"} />
-              <Text style={[styles.navLabel, active && styles.navLabelActive]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Logout */}
-      <View style={styles.logoutArea}>
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={(e) => {
-            e.stopPropagation();
-            onLogout();
-            onClose();
-          }}
-          activeOpacity={0.8}
-        >
-          <LogOut size={18} color="#E11D48" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 export default AdminSidebar;
 
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.40)",
+    backgroundColor: "rgba(0,0,0,0.75)",
   },
   drawer: {
     position: "absolute",
@@ -152,15 +163,15 @@ const styles = StyleSheet.create({
   logoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 20,
+    gap: 12,
+    padding: 24,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E5E5E5",
   },
   logoIconBox: {
-    width: 40, 
-    height: 40, 
-    borderRadius: 8,
+    width: 44, 
+    height: 44, 
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
     alignItems: "center", 
     justifyContent: "center",
@@ -171,67 +182,69 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   logoTitle: {
-    fontSize: 16, 
-    fontWeight: "800", 
+    fontSize: 18, 
+    fontWeight: "900", 
     color: "#111111", 
     letterSpacing: 1,
   },
   logoSub: {
-    fontSize: 10, 
+    fontSize: 11, 
     color: "#9CA3AF", 
-    marginTop: -1,
+    fontWeight: "700",
+    marginTop: -2,
+    textTransform: "uppercase",
   },
   closeBtn: {
     marginLeft: "auto",
-    width: 32, 
-    height: 32, 
-    borderRadius: 8,
+    width: 36, 
+    height: 36, 
+    borderRadius: 10,
     backgroundColor: "#F3F4F6",
     alignItems: "center", 
     justifyContent: "center",
   },
   nav: {
     flex: 1,
-    padding: 12,
+    padding: 16,
   },
   navItem: {
     flexDirection: "row", 
     alignItems: "center", 
-    gap: 12,
-    paddingHorizontal: 14, 
-    paddingVertical: 12,
-    borderRadius: 10, 
-    marginBottom: 4,
+    gap: 14,
+    paddingHorizontal: 16, 
+    paddingVertical: 14,
+    borderRadius: 12, 
+    marginBottom: 6,
   },
   navItemActive: {
     backgroundColor: "#E11D48",
   },
   navLabel: {
-    fontSize: 14, 
-    fontWeight: "500", 
+    fontSize: 15, 
+    fontWeight: "700", 
     color: "#6B7280",
   },
   navLabelActive: {
     color: "#FFFFFF", 
-    fontWeight: "700",
+    fontWeight: "800",
   },
   logoutArea: {
-    padding: 12,
+    padding: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#E5E5E5",
   },
   logoutBtn: {
     flexDirection: "row", 
     alignItems: "center", 
-    gap: 10,
-    paddingHorizontal: 14, 
-    paddingVertical: 12,
-    borderRadius: 10, 
+    gap: 12,
+    paddingHorizontal: 16, 
+    paddingVertical: 14,
+    borderRadius: 12, 
     backgroundColor: "rgba(225,29,72,0.08)",
   },
   logoutText: {
-    fontSize: 14, 
-    fontWeight: "700", 
+    fontSize: 15, 
+    fontWeight: "800", 
     color: "#E11D48",
   },
 });

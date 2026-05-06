@@ -1,43 +1,158 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet,
+  StyleSheet, ActivityIndicator, Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Bell, Package, ShoppingCart, Tag, Info, CheckCheck } from "lucide-react-native";
+import { Bell, Package, ShoppingCart, Tag, Info, CheckCheck, Trash2 } from "lucide-react-native";
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  orderBy, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  writeBatch,
+} from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import PageHeader from "../components/PageHeader";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { logActivity } from "../utils/activityLogger";
 
 interface Notification {
-  id: string; type: string; title: string; message: string; read: boolean; time: string;
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: any;
+  orderId?: string;
 }
 
-const mockNotifs: Notification[] = [];
-
 const typeIcon: Record<string, React.ElementType> = {
-  order: Package, cart: ShoppingCart, promo: Tag, info: Info,
+  order: Package, 
+  status: ShoppingCart, 
+  promo: Tag, 
+  info: Info,
 };
+
 const typeColor: Record<string, { bg: string; icon: string }> = {
   order: { bg: "rgba(225,29,72,0.10)", icon: "#E11D48" },
-  cart:  { bg: "rgba(22,163,74,0.10)", icon: "#16A34A" },
+  status:  { bg: "rgba(22,163,74,0.10)", icon: "#16A34A" },
   promo: { bg: "rgba(245,158,11,0.12)",icon: "#D97706" },
   info:  { bg: "#F3F4F6",              icon: "#6B7280" },
 };
 
 const NotificationsScreen = () => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, adminTheme } = useTheme();
+  const { user } = useAuth();
+  const { isAdminAuthenticated, admin } = useAdminAuth();
+  
+  // Use separate theme for admin
+  const isDark = isAdminAuthenticated ? adminTheme === "dark" : theme === "dark";
+  
   const bg = isDark ? "#111827" : "#F8F8F8";
   const cardBg = isDark ? "#1F2937" : "#FFFFFF";
   const titleColor = isDark ? "#FFFFFF" : "#111111";
   const msgColor = isDark ? "#9CA3AF" : "#6B7280";
 
-  const [notifs, setNotifs] = useState<Notification[]>(mockNotifs);
-  const unread = notifs.filter((n) => !n.read).length;
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markRead   = (id: string) => setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-  const markAllRead = () => setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
-  const deleteNotif = (id: string) => setNotifs((prev) => prev.filter((n) => n.id !== id));
+  useEffect(() => {
+    if (!user && !isAdminAuthenticated) return;
+
+    const recipientId = isAdminAuthenticated ? "admin" : user?.id;
+    if (!recipientId) return;
+
+    const q = query(
+      collection(db, "notifications"),
+      where("recipientId", "==", recipientId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+      })) as Notification[];
+      setNotifs(list);
+      setLoading(false);
+    }, (err) => {
+      console.error("Notif sync error:", err);
+      setLoading(false);
+    });
+
+    return unsub;
+  }, [user, isAdminAuthenticated]);
+
+  const unread = notifs.filter((n) => !n.isRead).length;
+
+  const markRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "notifications", id), { isRead: true });
+    } catch (err) {
+      console.error("Mark read error:", err);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      const batch = writeBatch(db);
+      notifs.forEach(n => {
+        if (!n.isRead) {
+          batch.update(doc(db, "notifications", n.id), { isRead: true });
+        }
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error("Mark all read error:", err);
+    }
+  };
+
+  const deleteNotif = async (notif: Notification) => {
+    try {
+      await deleteDoc(doc(db, "notifications", notif.id));
+      
+      // Store in history/activity page if it's admin
+      if (isAdminAuthenticated) {
+        await logActivity({
+          type: "notification",
+          title: "Notification Deleted",
+          subtitle: `Admin deleted: ${notif.title}`,
+          adminName: admin?.name || "Admin"
+        });
+      }
+    } catch (err) {
+      console.error("Delete notif error:", err);
+    }
+  };
+
+  const formatTime = (createdAt: any) => {
+    if (!createdAt) return "Just now";
+    const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+    return date.toLocaleString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <PageHeader title="Notifications" />
+        <View style={styles.empty}>
+          <ActivityIndicator size="large" color="#E11D48" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (notifs.length === 0) {
     return (
@@ -67,29 +182,35 @@ const NotificationsScreen = () => {
           const Icon = typeIcon[n.type] || Info;
           const c    = typeColor[n.type] || typeColor.info;
           return (
-            <TouchableOpacity key={n.id} onPress={() => markRead(n.id)}
-              style={[styles.card, { backgroundColor: cardBg }, !n.read && styles.cardUnread]} activeOpacity={0.75}>
-              <View style={[styles.iconCircle, { backgroundColor: c.bg }]}>
-                <Icon size={18} color={c.icon} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.cardTop}>
-                  <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-                    <Text style={[styles.cardTitle, { color: titleColor }, !n.read && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
-                    {!n.read && <View style={styles.dot} />}
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => deleteNotif(n.id)} 
-                    style={{ padding: 4, marginLeft: 8 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Text style={{ color: "#9CA3AF", fontSize: 16, fontWeight: "600" }}>✕</Text>
-                  </TouchableOpacity>
+            <View key={n.id} style={[styles.card, { backgroundColor: cardBg }, !n.isRead && styles.cardUnread]}>
+              <TouchableOpacity 
+                style={{ flex: 1, flexDirection: "row", gap: 12 }} 
+                onPress={() => markRead(n.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: c.bg }]}>
+                  <Icon size={18} color={c.icon} />
                 </View>
-                <Text style={[styles.cardMsg, { color: msgColor }]} numberOfLines={2}>{n.message}</Text>
-                <Text style={styles.cardTime}>{n.time}</Text>
-              </View>
-            </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.cardTop}>
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                      <Text style={[styles.cardTitle, { color: titleColor }, !n.isRead && styles.cardTitleBold]} numberOfLines={1}>{n.title}</Text>
+                      {!n.isRead && <View style={styles.dot} />}
+                    </View>
+                  </View>
+                  <Text style={[styles.cardMsg, { color: msgColor }]} numberOfLines={2}>{n.message}</Text>
+                  <Text style={styles.cardTime}>{formatTime(n.createdAt)}</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={() => deleteNotif(n)} 
+                style={styles.deleteBtn}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Trash2 size={18} color={isDark ? "#9CA3AF" : "#6B7280"} />
+              </TouchableOpacity>
+            </View>
           );
         })}
       </ScrollView>
@@ -102,7 +223,7 @@ export default NotificationsScreen;
 const styles = StyleSheet.create({
   safe:          { flex: 1, backgroundColor: "#F8F8F8" },
   content:       { padding: 16, gap: 10, paddingBottom: 32 },
-  card:          { flexDirection: "row", gap: 12, backgroundColor: "#FFFFFF", borderRadius: 14, padding: 14, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3 },
+  card:          { flexDirection: "row", gap: 12, backgroundColor: "#FFFFFF", borderRadius: 14, padding: 14, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3, alignItems: "center" },
   cardUnread:    { borderLeftWidth: 3, borderLeftColor: "#E11D48" },
   iconCircle:    { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   cardTop:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -113,6 +234,7 @@ const styles = StyleSheet.create({
   cardTime:      { fontSize: 10, color: "#9CA3AF", marginTop: 3 },
   markAllBtn:    { flexDirection: "row", alignItems: "center", gap: 4 },
   markAllText:   { fontSize: 11, fontWeight: "700", color: "#E11D48" },
+  deleteBtn:     { padding: 8, marginLeft: 4 },
   empty:         { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   emptyIcon:     { width: 80, height: 80, borderRadius: 40, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center" },
   emptyTitle:    { fontSize: 18, fontWeight: "800", color: "#111111" },

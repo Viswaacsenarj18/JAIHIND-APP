@@ -25,6 +25,8 @@ import { db } from "../../firebaseConfig";
 import { uploadImageToCloudinary } from "../../services/cloudinary";
 import ModalForm from "../../components/admin/ModalForm";
 
+import { useTheme } from "../../context/ThemeContext";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_TABLET = SCREEN_WIDTH >= 768;
 const IS_SMALL = SCREEN_WIDTH < 375;
@@ -40,6 +42,15 @@ interface Category {
 }
 
 const AdminCategoriesPage = () => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F8F8F8";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
+  const inputBg = isDark ? "#222222" : "#F3F4F6";
+
   const [catList, setCatList] = useState<Category[]>([]);
   const [productCounts, setProductCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
@@ -369,7 +380,7 @@ const AdminCategoriesPage = () => {
   const numColumns = IS_TABLET ? 3 : 2;
 
   const CategoryCard = ({ item }: { item: Category }) => (
-    <View style={[styles.card, { width: (SCREEN_WIDTH - 48 - (numColumns - 1) * 12) / numColumns }]}>
+    <View style={[styles.card, { width: (SCREEN_WIDTH - 48 - (numColumns - 1) * 12) / numColumns, backgroundColor: cardBg }]}>
       <View style={styles.imageWrapper}>
         <Image source={{ uri: item.image }} style={styles.image} resizeMode="contain" />
         <View style={styles.overlay}>
@@ -396,27 +407,27 @@ const AdminCategoriesPage = () => {
       </View>
       <View style={styles.cardInfo}>
         <Text style={styles.cardIcon}>{item.icon}</Text>
-        <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cardCount}>{productCounts[item.id] || 0} products</Text>
+        <Text style={[styles.cardName, { color: textColor }]} numberOfLines={1}>{item.name}</Text>
+        <Text style={[styles.cardCount, { color: subTextColor }]}>{productCounts[item.id] || 0} products</Text>
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <View style={styles.searchBox}>
-          <Search size={16} color="#9CA3AF" />
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <View style={[styles.headerRow, { backgroundColor: isDark ? "#111111" : "#FFFFFF", borderBottomColor: borderColor }]}>
+        <View style={[styles.searchBox, { backgroundColor: inputBg, borderColor: borderColor }]}>
+          <Search size={16} color={subTextColor} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search categories..."
-            placeholderTextColor="#9CA3AF"
-            style={styles.searchInput}
+            placeholderTextColor={subTextColor}
+            style={[styles.searchInput, { color: textColor }]}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <X size={16} color="#9CA3AF" />
+              <X size={16} color={subTextColor} />
             </TouchableOpacity>
           )}
         </View>
@@ -433,12 +444,12 @@ const AdminCategoriesPage = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.countText}>{filtered.length} of {catList.length} categories</Text>
+      <Text style={[styles.countText, { color: subTextColor }]}>{filtered.length} of {catList.length} categories</Text>
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#E11D48" />
-          <Text style={{ marginTop: 12, color: "#6B7280" }}>Loading categories...</Text>
+          <Text style={{ marginTop: 12, color: subTextColor }}>Loading categories...</Text>
         </View>
       ) : (
         <FlatList
@@ -459,10 +470,10 @@ const AdminCategoriesPage = () => {
           renderItem={({ item }) => <CategoryCard item={item} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>
+              <Text style={[styles.emptyTitle, { color: textColor }]}>
                 {search ? "No categories match your search" : "No categories yet"}
               </Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptySubtitle, { color: subTextColor }]}>
                 {search ? "Try a different search term" : "Tap \"Add Category\" to create your first category"}
               </Text>
               {search && (
@@ -478,39 +489,39 @@ const AdminCategoriesPage = () => {
       )}
 
       <ModalForm open={modalOpen} onClose={closeModal} title={editingId ? "Edit Category" : "Add Category"}>
-        <Text style={styles.label}>Category Name *</Text>
+        <Text style={[styles.label, { color: subTextColor }]}>Category Name *</Text>
         <TextInput
           value={form.name}
           onChangeText={(v) => setForm({ ...form, name: v })}
-          style={styles.input}
+          style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]}
           placeholder="e.g., Cricket, Football, Electronics"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={subTextColor}
         />
 
-        <Text style={styles.label}>Icon (Emoji)</Text>
+        <Text style={[styles.label, { color: subTextColor }]}>Icon (Emoji)</Text>
         <TextInput
           value={form.icon}
           onChangeText={(v) => setForm({ ...form, icon: v })}
-          style={styles.input}
+          style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]}
           placeholder="🏅"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={subTextColor}
           maxLength={2}
         />
 
-        <Text style={styles.label}>Image URL</Text>
+        <Text style={[styles.label, { color: subTextColor }]}>Image URL</Text>
         <TextInput
           value={form.image}
           onChangeText={(v) => setForm({ ...form, image: v })}
-          style={styles.input}
+          style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]}
           placeholder="https://example.com/category-image.jpg"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={subTextColor}
           autoCapitalize="none"
           keyboardType="url"
         />
 
         {form.image ? (
           <View style={styles.previewWrapper}>
-            <Image source={{ uri: form.image }} style={styles.imagePreview} resizeMode="contain" />
+            <Image source={{ uri: form.image }} style={[styles.imagePreview, { backgroundColor: isDark ? "#111827" : "#F3F4F6" }]} resizeMode="contain" />
             <TouchableOpacity 
               style={styles.remPreviewBtn} 
               onPress={() => setForm(prev => ({ ...prev, image: "" }))}
@@ -527,7 +538,7 @@ const AdminCategoriesPage = () => {
           disabled={uploading}
         >
           <LinearGradient 
-            colors={["#888888", "#555555"]} 
+            colors={isDark ? ["#444444", "#222222"] : ["#888888", "#555555"]} 
             start={{ x: 0, y: 0 }} 
             end={{ x: 1, y: 0 }} 
             style={styles.uploadImageBtn}

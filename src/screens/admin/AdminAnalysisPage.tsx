@@ -19,10 +19,19 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const AdminAnalysisPage = () => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F9FAFB";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#F3F4F6";
+
   const [loading, setLoading] = useState(true);
   const [orderData, setOrderData] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -91,11 +100,11 @@ const AdminAnalysisPage = () => {
   };
 
   const chartConfig = {
-    backgroundGradientFrom: "#FFFFFF",
-    backgroundGradientTo: "#FFFFFF",
+    backgroundGradientFrom: cardBg,
+    backgroundGradientTo: cardBg,
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(225, 29, 72, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+    labelColor: (opacity = 1) => isDark ? `rgba(156, 163, 175, ${opacity})` : `rgba(107, 114, 128, ${opacity})`,
     style: { borderRadius: 16 },
     propsForDots: {
       r: "4",
@@ -106,37 +115,37 @@ const AdminAnalysisPage = () => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: bg }]}>
         <ActivityIndicator size="large" color="#E11D48" />
-        <Text style={styles.loadingText}>Analyzing business data...</Text>
+        <Text style={[styles.loadingText, { color: subTextColor }]}>Analyzing business data...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: bg }]} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Summary Cards */}
       <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <View style={[styles.iconCircle, { backgroundColor: "rgba(225,29,72,0.1)" }]}>
+        <View style={[styles.statCard, { backgroundColor: cardBg }]}>
+          <View style={[styles.iconCircle, { backgroundColor: "rgba(225,29,72,0.15)" }]}>
             <DollarSign size={20} color="#E11D48" />
           </View>
-          <Text style={styles.statLabel}>Revenue</Text>
-          <Text style={styles.statValue}>₹{stats.totalRevenue.toLocaleString("en-IN")}</Text>
+          <Text style={[styles.statLabel, { color: subTextColor }]}>Revenue</Text>
+          <Text style={[styles.statValue, { color: textColor }]}>₹{stats.totalRevenue.toLocaleString("en-IN")}</Text>
         </View>
-        <View style={styles.statCard}>
-          <View style={[styles.iconCircle, { backgroundColor: "rgba(59,130,246,0.1)" }]}>
+        <View style={[styles.statCard, { backgroundColor: cardBg }]}>
+          <View style={[styles.iconCircle, { backgroundColor: "rgba(59,130,246,0.15)" }]}>
             <ShoppingCart size={20} color="#3B82F6" />
           </View>
-          <Text style={styles.statLabel}>Orders</Text>
-          <Text style={styles.statValue}>{stats.totalOrders}</Text>
+          <Text style={[styles.statLabel, { color: subTextColor }]}>Orders</Text>
+          <Text style={[styles.statValue, { color: textColor }]}>{stats.totalOrders}</Text>
         </View>
       </View>
 
       {/* Revenue Chart */}
-      <View style={styles.chartCard}>
+      <View style={[styles.chartCard, { backgroundColor: cardBg }]}>
         <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>Revenue Growth (Last 7 Days)</Text>
+          <Text style={[styles.chartTitle, { color: textColor }]}>Revenue Growth (Last 7 Days)</Text>
           <TrendingUp size={16} color="#16A34A" />
         </View>
         <LineChart
@@ -151,9 +160,9 @@ const AdminAnalysisPage = () => {
       </View>
 
       {/* Orders Chart */}
-      <View style={styles.chartCard}>
+      <View style={[styles.chartCard, { backgroundColor: cardBg }]}>
         <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>Daily Order Volume</Text>
+          <Text style={[styles.chartTitle, { color: textColor }]}>Daily Order Volume</Text>
         </View>
         <BarChart
           data={orderData[1]}
@@ -169,14 +178,14 @@ const AdminAnalysisPage = () => {
         />
       </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Business Insights</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Average Order Value</Text>
-          <Text style={styles.infoValue}>₹{stats.avgOrderValue}</Text>
+      <View style={[styles.infoCard, { backgroundColor: cardBg }]}>
+        <Text style={[styles.infoTitle, { color: textColor }]}>Business Insights</Text>
+        <View style={[styles.infoRow, { borderBottomColor: borderColor }]}>
+          <Text style={[styles.infoLabel, { color: subTextColor }]}>Average Order Value</Text>
+          <Text style={[styles.infoValue, { color: textColor }]}>₹{stats.avgOrderValue}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Platform Growth</Text>
+        <View style={[styles.infoRow, { borderBottomColor: borderColor }]}>
+          <Text style={[styles.infoLabel, { color: subTextColor }]}>Platform Growth</Text>
           <Text style={[styles.infoValue, { color: "#16A34A" }]}>+{stats.growth}%</Text>
         </View>
       </View>
@@ -202,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
@@ -216,7 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },

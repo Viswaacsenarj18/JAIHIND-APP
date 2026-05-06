@@ -17,54 +17,64 @@ import {
   query, doc, updateDoc, deleteDoc, orderBy,
 } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { useTheme } from "../../context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const IS_SMALL = SCREEN_WIDTH < 375;
 
 interface Product {
   id: string;
   name: string;
   category: string;
   categoryName: string;
-  description: string;
   price: number;
-  originalPrice?: number | null;
+  originalPrice?: number;
   stock: number;
-  inStock: boolean;
-  badge?: string | null;
+  description: string;
   images: string[];
-  rating: number;
-  reviews: number;
-  hasSizes?: boolean;
-  sizes?: Record<string, number>;
+  badge: string | null;
+  hasSizes: boolean;
+  sizes: Record<string, number>;
+  inStock: boolean;
   createdAt: any;
-  updatedAt: any;
 }
 
 interface Category {
   id: string;
   name: string;
   icon: string;
-  image: string;
 }
 
-const BADGE_OPTIONS = [
-  { label: "None", value: null },
-  { label: "Bestseller", value: "Bestseller" },
-  { label: "New", value: "New" },
-  { label: "Hot Deal", value: "Hot Deal" },
-  { label: "Trending", value: "Trending" },
-  { label: "Sale", value: "Sale" },
-];
-
 const emptyForm = {
-  name: "", category: "", price: "", originalPrice: "",
-  stock: "", description: "", images: [] as string[], badge: null as string | null,
+  name: "",
+  category: "",
+  price: "",
+  originalPrice: "",
+  stock: "0",
+  description: "",
+  images: [] as string[],
+  badge: null as string | null,
   hasSizes: false,
   sizes: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 } as Record<string, number>,
 };
 
+const BADGE_OPTIONS = [
+  { label: "None", value: null },
+  { label: "New Arrival", value: "New Arrival" },
+  { label: "Best Seller", value: "Best Seller" },
+  { label: "Limited Edition", value: "Limited Edition" },
+  { label: "Sale", value: "Sale" },
+];
+
 export default function AdminProductsPage() {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F9FAFB";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
+  const inputBg = isDark ? "#222222" : "#F3F4F6";
+
   const [productList, setProductList] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
@@ -101,14 +111,13 @@ export default function AdminProductsPage() {
       },
       (err) => {
         console.error("Products load error:", err);
-        Alert.alert("Error", "Failed to load products");
         setLoading(false);
       }
     );
     return unsub;
   }, []);
 
-  const getCategoryName = (catId: string) => categories.find(c => c.id === catId)?.name || catId;
+  const getCategoryName = (catId: string) => categories.find(c => c.id === catId)?.name || "Select Category";
 
   const filtered = useMemo(() => productList.filter(p =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -134,15 +143,12 @@ export default function AdminProductsPage() {
         for (const asset of result.assets) {
           try {
             const url = await uploadImageToCloudinary(asset.uri);
-            uploadedUrls.push(url);
+            if (url) uploadedUrls.push(url);
           } catch (e) {
             console.error("Cloudinary upload error:", e);
           }
         }
         setForm(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls] }));
-        if (uploadedUrls.length > 0) {
-          Alert.alert("Success", `${uploadedUrls.length} images uploaded`);
-        }
       }
     } catch (e) {
       Alert.alert("Error", "Image upload failed");
@@ -174,11 +180,11 @@ export default function AdminProductsPage() {
   const openEdit = (product: Product) => {
     setEditingId(product.id);
     setForm({
-      name: product.name,
-      category: product.category,
-      price: String(product.price),
+      name: product.name || "",
+      category: product.category || "",
+      price: String(product.price || ""),
       originalPrice: product.originalPrice ? String(product.originalPrice) : "",
-      stock: String(product.stock),
+      stock: String(product.stock || "0"),
       description: product.description || "",
       images: product.images || [],
       badge: product.badge || null,
@@ -188,17 +194,7 @@ export default function AdminProductsPage() {
     setModalOpen(true);
   };
 
-  const notifyError = (title: string, msg: string) => {
-    console.error(`❌ ${title}:`, msg);
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined') window.alert(`${title}\n\n${msg}`);
-    } else {
-      Alert.alert(title, msg);
-    }
-  };
-
   const closeModal = () => {
-
     setModalOpen(false);
     setEditingId(null);
     setForm(emptyForm);
@@ -208,51 +204,25 @@ export default function AdminProductsPage() {
     setShowBadgePicker(false);
   };
 
-  // ===== DELETE WITH CONFIRMATION =====
   const handleDelete = (id: string, name: string) => {
-    console.log("🗑️ DELETE ICON CLICKED:", id, name);
-    if (!id) {
-      console.error("❌ No product ID provided");
-      return;
-    }
-    const title = "Delete Product";
-    const message = `Are you sure you want to delete "${name || "this product"}"?`;
-    const onConfirm = () => {
-      console.log("✅ Confirmed delete:", id);
-      performDelete(id, name);
+    const onConfirm = async () => {
+      try {
+        setDeleting(id);
+        await deleteDoc(doc(db, "products", id));
+      } catch (error: any) {
+        Alert.alert("Error", "Failed to delete product");
+      } finally {
+        setDeleting(null);
+      }
     };
     
     if (Platform.OS === 'web') {
-      // Web fallback using window.confirm
-      if (typeof window !== 'undefined' && window.confirm) {
-        if (window.confirm(`${title}\n\n${message}`)) {
-          onConfirm();
-        } else {
-          console.log("❌ Cancelled");
-        }
-      }
+      if (window.confirm(`Delete "${name}"?`)) onConfirm();
     } else {
-      // Native Alert
-      Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel", onPress: () => console.log("❌ Cancelled") },
+      Alert.alert("Delete", `Delete "${name}"?`, [
+        { text: "Cancel", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: onConfirm },
       ]);
-    }
-  };
-
-  const performDelete = async (id: string, name: string) => {
-    try {
-      console.log("🔥 DELETE CLICKED:", id);
-      setDeleting(id);
-      const productRef = doc(db, "products", id);
-      await deleteDoc(productRef);
-      console.log("✅ DELETED SUCCESS:", name);
-      Alert.alert("Success", `${name} deleted`);
-    } catch (error: any) {
-      notifyError("Delete failed", error.message || String(error));
-    } finally {
-
-      setDeleting(null);
     }
   };
 
@@ -286,7 +256,7 @@ export default function AdminProductsPage() {
 
       if (editingId) {
         await updateDoc(doc(db, "products", editingId), data);
-        Alert.alert("Success", "Product updated successfully");
+        Alert.alert("Success", "Product updated");
       } else {
         await addDoc(collection(db, "products"), {
           ...data,
@@ -294,18 +264,16 @@ export default function AdminProductsPage() {
           rating: 0,
           reviews: 0
         });
-        Alert.alert("Success", "Product added successfully");
+        Alert.alert("Success", "Product added");
       }
       closeModal();
     } catch (err: any) {
-      notifyError("Save failed", err.message || String(err));
+      Alert.alert("Error", "Failed to save product");
     } finally {
-
       setSaving(false);
     }
   };
 
-  // Helper Components
   const StockBadge = ({ inStock, stock }: { inStock: boolean; stock: number }) => (
     <View style={[styles.stockBadge, inStock ? styles.inStockBadge : styles.outOfStockBadge]}>
       <Text style={[styles.stockBadgeText, inStock ? styles.inStockText : styles.outOfStockText]}>
@@ -315,22 +283,23 @@ export default function AdminProductsPage() {
   );
 
   if (loading) return (
-    <View style={styles.center}>
+    <View style={[styles.center, { backgroundColor: bg }]}>
       <ActivityIndicator size="large" color="#E11D48" />
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bg }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.searchBox}>
-          <Search size={16} color="#9CA3AF" />
+      <View style={[styles.header, { backgroundColor: isDark ? "#111111" : "#FFFFFF", borderBottomColor: borderColor }]}>
+        <View style={[styles.searchBox, { backgroundColor: inputBg, borderColor: borderColor }]}>
+          <Search size={16} color={subTextColor} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search products..."
-            style={styles.searchInput}
+            placeholderTextColor={subTextColor}
+            style={[styles.searchInput, { color: textColor }]}
           />
         </View>
         <TouchableOpacity onPress={openAdd}>
@@ -346,22 +315,22 @@ export default function AdminProductsPage() {
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => setRefreshing(false)} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => setRefreshing(false)} colors={["#E11D48"]} tintColor="#E11D48" />}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={{ uri: item.images?.[0] }} style={styles.thumb} resizeMode="contain" />
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
+            <Image source={{ uri: item.images?.[0] }} style={[styles.thumb, { backgroundColor: isDark ? "#222" : "#F3F4F6" }]} resizeMode="contain" />
             <View style={styles.info}>
-              <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.name, { color: textColor }]} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.price}>₹{item.price}</Text>
               <StockBadge inStock={item.inStock} stock={item.stock} />
             </View>
             <View style={styles.actions}>
-              <TouchableOpacity onPress={() => openEdit(item)} style={styles.actBtn}>
-                <Pencil size={15} color="#6B7280" />
+              <TouchableOpacity onPress={() => openEdit(item)} style={[styles.actBtn, { backgroundColor: isDark ? "#222222" : "#F3F4F6" }]}>
+                <Pencil size={15} color={subTextColor} />
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={() => handleDelete(item.id, item.name)} 
-                style={[styles.actBtn, styles.delBtn]}
+                style={[styles.actBtn, styles.delBtn, isDark && { backgroundColor: "rgba(225,29,72,0.15)" }]}
               >
                 {deleting === item.id ? (
                   <ActivityIndicator size="small" color="#E11D48" />
@@ -376,29 +345,36 @@ export default function AdminProductsPage() {
 
       {/* Main Form Modal */}
       <ModalForm open={modalOpen} onClose={closeModal} title={editingId ? "Edit Product" : "Add Product"}>
-        <ScrollView style={{ maxHeight: 520 }} showsVerticalScrollIndicator={false}>
-          <Text style={styles.label}>Product Name *</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={[styles.label, { color: subTextColor }]}>Product Name *</Text>
           <TextInput 
             value={form.name} 
             onChangeText={(v) => setForm({ ...form, name: v })} 
-            style={styles.input} 
+            style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]} 
             placeholder="Enter product name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={subTextColor}
           />
 
-          <Text style={styles.label}>Category *</Text>
-          <TouchableOpacity style={styles.pickerBtn} onPress={() => setShowCatPicker(!showCatPicker)}>
-            <Text style={{ color: form.category ? "#111" : "#9CA3AF" }}>
-              {form.category ? getCategoryName(form.category) : "Select Category"}
+          <Text style={[styles.label, { color: subTextColor }]}>Category *</Text>
+          <TouchableOpacity 
+            style={[styles.pickerBtn, { backgroundColor: inputBg, borderColor: borderColor }]} 
+            onPress={() => setShowCatPicker(!showCatPicker)}
+          >
+            <Text style={{ color: form.category ? textColor : subTextColor }}>
+              {getCategoryName(form.category)}
             </Text>
-            <ChevronDown size={18} color="#9CA3AF" />
+            <ChevronDown size={18} color={subTextColor} />
           </TouchableOpacity>
           
           {showCatPicker && (
-            <View style={styles.dropdown}>
+            <View style={[styles.dropdown, { backgroundColor: cardBg, borderColor: borderColor }]}>
               {categories.map(c => (
-                <TouchableOpacity key={c.id} style={styles.dropdownItem} onPress={() => { setForm({ ...form, category: c.id }); setShowCatPicker(false); }}>
-                  <Text>{c.icon} {c.name}</Text>
+                <TouchableOpacity 
+                  key={c.id} 
+                  style={[styles.dropdownItem, { borderBottomColor: borderColor }]} 
+                  onPress={() => { setForm({ ...form, category: c.id }); setShowCatPicker(false); }}
+                >
+                  <Text style={{ color: textColor }}>{c.icon} {c.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -406,58 +382,61 @@ export default function AdminProductsPage() {
 
           <View style={styles.rowInputs}>
              <View style={styles.halfInput}>
-                <Text style={styles.label}>Price *</Text>
+                <Text style={[styles.label, { color: subTextColor }]}>Price *</Text>
                 <TextInput 
                   value={form.price} 
                   keyboardType="numeric" 
                   onChangeText={(v) => setForm({ ...form, price: v })} 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]} 
                   placeholder="0"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={subTextColor}
                 />
              </View>
              <View style={styles.halfInput}>
-                <Text style={styles.label}>Original Price</Text>
+                <Text style={[styles.label, { color: subTextColor }]}>Original Price</Text>
                 <TextInput 
                   value={form.originalPrice} 
                   keyboardType="numeric" 
                   onChangeText={(v) => setForm({ ...form, originalPrice: v })} 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]} 
                   placeholder="0"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={subTextColor}
                 />
              </View>
           </View>
 
           <View style={styles.rowInputs}>
              <View style={styles.halfInput}>
-                <Text style={styles.label}>Stock</Text>
+                <Text style={[styles.label, { color: subTextColor }]}>Stock</Text>
                 <TextInput 
                   value={form.stock} 
                   keyboardType="numeric" 
                   onChangeText={(v) => setForm({ ...form, stock: v })} 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]} 
                   placeholder="0"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={subTextColor}
                 />
              </View>
              <View style={styles.halfInput}>
-                <Text style={styles.label}>Badge</Text>
-                <TouchableOpacity style={styles.pickerBtn} onPress={() => setShowBadgePicker(!showBadgePicker)}>
-                  <Text style={{ color: form.badge ? "#111" : "#9CA3AF" }}>
+                <Text style={[styles.label, { color: subTextColor }]}>Badge</Text>
+                <TouchableOpacity 
+                  style={[styles.pickerBtn, { backgroundColor: inputBg, borderColor: borderColor }]} 
+                  onPress={() => setShowBadgePicker(!showBadgePicker)}
+                >
+                  <Text style={{ color: form.badge ? textColor : subTextColor }}>
                     {form.badge || "None"}
                   </Text>
-                  <ChevronDown size={18} color="#9CA3AF" />
+                  <ChevronDown size={18} color={subTextColor} />
                 </TouchableOpacity>
                 {showBadgePicker && (
-                  <View style={styles.dropdown}>
+                  <View style={[styles.dropdown, { backgroundColor: cardBg, borderColor: borderColor }]}>
                     {BADGE_OPTIONS.map(b => (
                       <TouchableOpacity 
                         key={b.label} 
-                        style={styles.dropdownItem} 
+                        style={[styles.dropdownItem, { borderBottomColor: borderColor }]} 
                         onPress={() => { setForm({ ...form, badge: b.value }); setShowBadgePicker(false); }}
                       >
-                        <Text>{b.label}</Text>
+                        <Text style={{ color: textColor }}>{b.label}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -465,39 +444,38 @@ export default function AdminProductsPage() {
              </View>
           </View>
 
-          <Text style={styles.label}>Description</Text>
+          <Text style={[styles.label, { color: subTextColor }]}>Description</Text>
           <TextInput
             value={form.description}
             onChangeText={(v) => setForm({ ...form, description: v })}
-            style={[styles.input, styles.textarea]}
+            style={[styles.input, styles.textarea, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]}
             placeholder="Enter product description..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={subTextColor}
             multiline
             numberOfLines={4}
-          textAlignVertical="top"
+            textAlignVertical="top"
           />
 
-          {/* SIZE VARIANTS */}
           <TouchableOpacity 
-            style={[styles.variantToggle, form.hasSizes && styles.variantToggleActive]} 
+            style={[styles.variantToggle, { backgroundColor: inputBg, borderColor: borderColor }, form.hasSizes && styles.variantToggleActive, form.hasSizes && isDark && { backgroundColor: "rgba(59,130,246,0.1)", borderColor: "#3B82F6" }]} 
             onPress={() => setForm({ ...form, hasSizes: !form.hasSizes })}
             activeOpacity={0.8}
           >
             {form.hasSizes ? (
               <CheckCircle2 size={22} color="#3B82F6" />
             ) : (
-              <View style={styles.checkboxOutline} />
+              <View style={[styles.checkboxOutline, isDark && { backgroundColor: "#222", borderColor: "#444" }]} />
             )}
-            <Text style={styles.variantToggleText}>This product has size variants</Text>
+            <Text style={[styles.variantToggleText, { color: textColor }]}>Product has size variants</Text>
           </TouchableOpacity>
 
           {form.hasSizes && (
-            <View style={styles.sizeInventoryBox}>
-              <Text style={styles.sizeBoxTitle}>Size Inventory (XS - XXXL)</Text>
+            <View style={[styles.sizeInventoryBox, { backgroundColor: isDark ? "#111111" : "#F8FAFC", borderColor: borderColor }]}>
+              <Text style={[styles.sizeBoxTitle, { color: textColor }]}>Size Inventory</Text>
               <View style={styles.sizeGrid}>
                 {Object.keys(form.sizes).map((size) => (
                   <View key={size} style={styles.sizeInputItem}>
-                    <Text style={styles.sizeLabel}>{size}</Text>
+                    <Text style={[styles.sizeLabel, { color: subTextColor }]}>{size}</Text>
                     <TextInput
                       value={String(form.sizes[size])}
                       keyboardType="numeric"
@@ -506,8 +484,7 @@ export default function AdminProductsPage() {
                         const totalStock = Object.values(newSizes).reduce((a, b) => a + b, 0);
                         setForm({ ...form, sizes: newSizes, stock: String(totalStock) });
                       }}
-                      style={styles.sizeInput}
-                      placeholder="0"
+                      style={[styles.sizeInput, { backgroundColor: isDark ? "#222" : "#FFF", borderColor: borderColor, color: textColor }]}
                     />
                   </View>
                 ))}
@@ -515,14 +492,12 @@ export default function AdminProductsPage() {
             </View>
           )}
 
-          <Text style={styles.label}>Images</Text>
-          
-          {/* Image Preview Strip */}
+          <Text style={[styles.label, { color: subTextColor }]}>Images</Text>
           {form.images.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewStrip}>
               {form.images.map((img, idx) => (
                 <View key={idx} style={styles.previewItem}>
-                  <Image source={{ uri: img }} style={styles.previewImage} resizeMode="contain" />
+                  <Image source={{ uri: img }} style={[styles.previewImage, { backgroundColor: inputBg }]} resizeMode="contain" />
                   <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(idx)}>
                     <X size={12} color="#FFFFFF" />
                   </TouchableOpacity>
@@ -532,27 +507,24 @@ export default function AdminProductsPage() {
           )}
 
           <View style={styles.imageBtnRow}>
-            <TouchableOpacity style={styles.upBtn} onPress={pickImage} disabled={uploading}>
+            <TouchableOpacity style={[styles.upBtn, { borderColor: "#E11D48" }]} onPress={pickImage} disabled={uploading}>
               <Upload size={18} color="#E11D48" />
-              <Text style={styles.upBtnText}>{uploading ? "Uploading..." : "Upload from Gallery"}</Text>
+              <Text style={styles.upBtnText}>{uploading ? "..." : "Upload Images"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.urlBtn} onPress={() => setShowUrlModal(!showUrlModal)}>
-              <Link size={18} color="#6B7280" />
-              <Text style={styles.urlBtnText}>Add by URL</Text>
+            <TouchableOpacity style={[styles.urlBtn, { backgroundColor: inputBg, borderColor: borderColor }]} onPress={() => setShowUrlModal(!showUrlModal)}>
+              <Link size={18} color={subTextColor} />
+              <Text style={[styles.urlBtnText, { color: subTextColor }]}>Add URL</Text>
             </TouchableOpacity>
           </View>
 
-          {/* URL Input */}
           {showUrlModal && (
             <View style={styles.urlInputBox}>
               <TextInput
                 value={imageUrlInput}
                 onChangeText={setImageUrlInput}
-                style={styles.urlInput}
-                placeholder="https://example.com/image.jpg"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                keyboardType="url"
+                style={[styles.urlInput, { backgroundColor: inputBg, borderColor: borderColor, color: textColor }]}
+                placeholder="https://..."
+                placeholderTextColor={subTextColor}
               />
               <TouchableOpacity style={styles.urlAddBtn} onPress={addImageByUrl}>
                 <Text style={styles.urlAddText}>Add</Text>
@@ -565,6 +537,7 @@ export default function AdminProductsPage() {
               {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitText}>{editingId ? "Update Product" : "Save Product"}</Text>}
             </LinearGradient>
           </TouchableOpacity>
+          <View style={{ height: 40 }} />
         </ScrollView>
       </ModalForm>
     </View>
@@ -574,120 +547,57 @@ export default function AdminProductsPage() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", padding: 16, backgroundColor: "#FFF", gap: 10, alignItems: "center" },
-  searchBox: { flex: 1, flexDirection: "row", backgroundColor: "#F3F4F6", padding: 8, borderRadius: 10, alignItems: "center" },
-  searchInput: { flex: 1, marginLeft: 8, color: "#111" },
-  addBtn: { flexDirection: "row", padding: 10, borderRadius: 10, alignItems: "center", gap: 5 },
-  addBtnText: { color: "#FFF", fontWeight: "bold" },
-  list: { padding: 16 },
-  card: { flexDirection: "row", backgroundColor: "#FFF", padding: 12, borderRadius: 12, marginBottom: 10, alignItems: "center" },
-  thumb: { width: 60, height: 60, borderRadius: 8, marginRight: 12, backgroundColor: "#F3F4F6" },
+  header: { flexDirection: "row", padding: 16, backgroundColor: "#FFF", gap: 10, alignItems: "center", borderBottomWidth: 1 },
+  searchBox: { flex: 1, flexDirection: "row", borderWidth: 1, padding: 8, borderRadius: 12, alignItems: "center" },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14 },
+  addBtn: { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, alignItems: "center", gap: 6 },
+  addBtnText: { color: "#FFF", fontWeight: "800", fontSize: 14 },
+  list: { padding: 16, paddingBottom: 100 },
+  card: { flexDirection: "row", padding: 14, borderRadius: 16, marginBottom: 12, alignItems: "center", elevation: 2, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4 },
+  thumb: { width: 64, height: 64, borderRadius: 10, marginRight: 14 },
   info: { flex: 1 },
-  name: { fontWeight: "bold", fontSize: 14, color: "#111" },
-  price: { color: "#E11D48", fontWeight: "700" },
+  name: { fontWeight: "800", fontSize: 15 },
+  price: { color: "#E11D48", fontWeight: "900", fontSize: 16, marginTop: 2 },
   actions: { flexDirection: "row", gap: 8 },
-  actBtn: { padding: 8, backgroundColor: "#F3F4F6", borderRadius: 8 },
+  actBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   delBtn: { backgroundColor: "#FEE2E2" },
-  stockBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4, alignSelf: 'flex-start' },
+  stockBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, marginTop: 6, alignSelf: 'flex-start' },
   inStockBadge: { backgroundColor: "#DCFCE7" },
   outOfStockBadge: { backgroundColor: "#FEE2E2" },
-  stockBadgeText: { fontSize: 10, fontWeight: "600" },
+  stockBadgeText: { fontSize: 10, fontWeight: "800" },
   inStockText: { color: "#166534" },
   outOfStockText: { color: "#991B1B" },
-  label: { fontSize: 12, fontWeight: "600", color: "#6B7280", marginTop: 15, marginBottom: 5 },
-  input: { backgroundColor: "#F9FAFB", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, padding: 10, color: "#111" },
-  textarea: { height: 80, paddingTop: 10, textAlignVertical: "top" },
-  rowInputs: { flexDirection: "row", gap: 10 },
+  label: { fontSize: 12, fontWeight: "800", color: "#6B7280", marginTop: 18, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+  input: { borderWidth: 1, borderRadius: 14, padding: 12, fontSize: 14, fontWeight: "600" },
+  textarea: { height: 100, paddingTop: 12 },
+  rowInputs: { flexDirection: "row", gap: 12 },
   halfInput: { flex: 1 },
-  imagePreviewStrip: { marginBottom: 10 },
-  previewItem: { position: "relative", marginRight: 10 },
-  previewImage: { width: 80, height: 80, borderRadius: 10, backgroundColor: "#F3F4F6" },
-  removeImageBtn: {
-    position: "absolute", top: -6, right: -6,
-    backgroundColor: "#E11D48", borderRadius: 10,
-    width: 20, height: 20, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "#FFF"
-  },
-  imageBtnRow: { flexDirection: "row", gap: 10 },
-  upBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, borderWidth: 1, borderColor: "#E11D48", borderRadius: 10, borderStyle: 'dashed' },
-  upBtnText: { color: "#E11D48", fontWeight: "600" },
-  urlBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, backgroundColor: "#F9FAFB" },
-  urlBtnText: { color: "#6B7280", fontWeight: "600" },
-  urlInputBox: { flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center" },
-  urlInput: { flex: 1, backgroundColor: "#F9FAFB", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, padding: 10, color: "#111" },
-  urlAddBtn: { backgroundColor: "#E11D48", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  urlAddText: { color: "#FFF", fontWeight: "700" },
-  submitBtn: { padding: 15, borderRadius: 10, alignItems: "center" },
-  submitText: { color: "#FFF", fontWeight: "bold" },
-  pickerBtn: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#F9FAFB", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: "#E5E7EB" },
-  dropdown: { backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, marginTop: 5, maxHeight: 200 },
-  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
-  variantToggle: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    gap: 12, 
-    marginTop: 20, 
-    padding: 16, 
-    borderRadius: 12, 
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  variantToggleActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
-  },
-  checkboxOutline: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
-    backgroundColor: "#FFF",
-  },
-  variantToggleText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
-  sizeInventoryBox: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  sizeBoxTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#111",
-    marginBottom: 16,
-  },
-  sizeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  sizeInputItem: {
-    width: (SCREEN_WIDTH - 120) / 3, // Roughly 3 columns
-    gap: 6,
-  },
-  sizeLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4B5563",
-  },
-  sizeInput: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 10,
-    padding: 8,
-    textAlign: "center",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111",
-  },
+  imagePreviewStrip: { marginBottom: 12 },
+  previewItem: { position: "relative", marginRight: 12 },
+  previewImage: { width: 80, height: 80, borderRadius: 12 },
+  removeImageBtn: { position: "absolute", top: -6, right: -6, backgroundColor: "#E11D48", borderRadius: 10, width: 22, height: 22, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#FFF" },
+  imageBtnRow: { flexDirection: "row", gap: 12 },
+  upBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, padding: 14, borderWidth: 1.5, borderRadius: 14, borderStyle: 'dashed' },
+  upBtnText: { color: "#E11D48", fontWeight: "800", fontSize: 13 },
+  urlBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 16, borderWidth: 1, borderRadius: 14 },
+  urlBtnText: { fontWeight: "700", fontSize: 13 },
+  urlInputBox: { flexDirection: "row", gap: 10, marginTop: 12 },
+  urlInput: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 12 },
+  urlAddBtn: { backgroundColor: "#E11D48", paddingHorizontal: 20, justifyContent: "center", borderRadius: 14 },
+  urlAddText: { color: "#FFF", fontWeight: "800" },
+  submitBtn: { padding: 16, borderRadius: 16, alignItems: "center" },
+  submitText: { color: "#FFF", fontWeight: "900", fontSize: 16, letterSpacing: 0.5 },
+  pickerBtn: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1 },
+  dropdown: { borderWidth: 1, borderRadius: 14, marginTop: 8, maxHeight: 200, overflow: "hidden" },
+  dropdownItem: { padding: 14, borderBottomWidth: 1 },
+  variantToggle: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 24, padding: 18, borderRadius: 16, borderWidth: 1.5 },
+  variantToggleActive: { backgroundColor: "#EFF6FF", borderColor: "#3B82F6" },
+  checkboxOutline: { width: 22, height: 22, borderRadius: 6, borderWidth: 2 },
+  variantToggleText: { fontSize: 15, fontWeight: "800" },
+  sizeInventoryBox: { marginTop: 14, padding: 20, borderRadius: 16, borderWidth: 1 },
+  sizeBoxTitle: { fontSize: 16, fontWeight: "900", marginBottom: 16 },
+  sizeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  sizeInputItem: { width: (SCREEN_WIDTH - 120) / 3, gap: 6 },
+  sizeLabel: { fontSize: 11, fontWeight: "800" },
+  sizeInput: { borderWidth: 1, borderRadius: 12, padding: 10, textAlign: "center", fontSize: 14, fontWeight: "800" },
 });
-

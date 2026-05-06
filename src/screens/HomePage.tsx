@@ -6,6 +6,7 @@ import {
   StatusBar,
   RefreshControl,
   FlatList,
+  TouchableOpacity,
   Dimensions,
   StyleSheet,
 } from "react-native";
@@ -16,6 +17,7 @@ import AppHeader from "../components/AppHeader";
 import BannerSlider from "../components/BannerSlider";
 import ProductCard from "../components/ProductCard";
 import CategoryCard from "../components/CategoryCard";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -23,31 +25,33 @@ const HORIZONTAL_PADDING = SCREEN_WIDTH < 375 ? 12 : 16;
 
 const HomePage = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const { products, categories } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
+  
   const isDark = theme === "dark";
   const bg = isDark ? "#111827" : "#F8F8F8";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
 
   const featuredProducts = (products || []).slice(0, 4);
-  const featuredCategories = (categories || []).slice(0, 6);
+  const featuredCategories = (categories || []).slice(0, 8);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Data auto-refreshes via Firestore real-time listeners in ProductContext
-    // Simulate a brief refresh delay so the user sees feedback
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1200);
+    setTimeout(() => setRefreshing(false), 1200);
   }, []);
 
   const renderCategory = ({ item }: { item: any }) => (
     <CategoryCard category={item} />
-  );
-
-  const renderProduct = ({ item }: { item: any }) => (
-    <ProductCard product={item} />
   );
 
   return (
@@ -62,6 +66,12 @@ const HomePage = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#E11D48"]} tintColor="#E11D48" />
         }
       >
+        {/* Greetings */}
+        <View style={[styles.section, { marginTop: 12, marginBottom: 16 }]}>
+          <Text style={[styles.greetingText, { color: textSecondary }]}>{getGreeting()},</Text>
+          <Text style={[styles.userNameText, { color: textPrimary }]}>{user?.name || "Guest"} 👋</Text>
+        </View>
+
         {/* Live Banner Slider */}
         <View style={[styles.section, { marginBottom: 20 }]}>
           <BannerSlider />
@@ -79,6 +89,24 @@ const HomePage = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
           />
+        </View>
+
+        {/* Category Emojis (Quick Access) */}
+        <View style={[styles.section, { marginBottom: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: textPrimary }]}>
+            Quick Shop ⚡
+          </Text>
+          <View style={styles.emojiRow}>
+            {categories.slice(0, 8).map((cat) => (
+              <TouchableOpacity 
+                key={cat.id} 
+                style={[styles.emojiCircle, { backgroundColor: isDark ? "#1F2937" : "#FFFFFF" }]}
+                onPress={() => navigation.navigate("CategoryDetail" as never, { categoryId: cat.id })}
+              >
+                <Text style={styles.emojiText}>{cat.icon}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={[styles.section, { marginBottom: 24 }]}>
@@ -114,11 +142,44 @@ const styles = StyleSheet.create({
   section: {
     marginHorizontal: HORIZONTAL_PADDING,
   },
+  greetingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+    letterSpacing: 0.3,
+  },
+  userNameText: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#111111",
+    marginTop: 2,
+  },
   sectionTitle: {
     fontSize: SCREEN_WIDTH < 375 ? 16 : 18,
     fontWeight: "800",
     color: "#111111",
     marginBottom: 12,
+  },
+  emojiRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  emojiCircle: {
+    width: (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 36) / 4,
+    height: (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 36) / 4,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emojiText: {
+    fontSize: 24,
   },
   productsGrid: {
     flexDirection: "row",

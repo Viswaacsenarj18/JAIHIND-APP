@@ -17,6 +17,9 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../firebaseConfig";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 // ─── Navigation types (adjust to your stack) ─────────────────────────────────
 type RootStackParamList = {
@@ -32,7 +35,26 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 const AppHeader = () => {
   const navigation = useNavigation<NavProp>();
   const { totalItems } = useCart();
+  const { user } = useAuth();
   const { theme } = useTheme();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    const q = query(
+      collection(db, "notifications"),
+      where("recipientId", "==", user.id),
+      where("isRead", "==", false)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setUnreadCount(snap.size);
+    });
+    return unsub;
+  }, [user]);
+
   const isDark = theme === "dark";
   const headerBg = isDark ? "#111827" : "#FFFFFF";
   const borderColor = isDark ? "#1F2937" : "#E5E5E5";
@@ -71,6 +93,11 @@ const AppHeader = () => {
         </TouchableOpacity>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Notifications")} activeOpacity={0.75}>
           <Bell size={18} color={iconColor} />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </View>

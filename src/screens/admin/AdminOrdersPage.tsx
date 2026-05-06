@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, Platform,
-
 } from "react-native";
 import {
   collection,
@@ -16,7 +15,7 @@ import {
 import { db } from "../../firebaseConfig";
 import StatusBadge from "../../components/admin/StatusBadge";
 import ModalForm from "../../components/admin/ModalForm";
-import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../context/ThemeContext";
 
 export interface AdminOrder {
   id: string;
@@ -39,6 +38,14 @@ export interface AdminOrder {
 }
 
 const AdminOrdersPage = () => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F8F8F8";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
+
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selected, setSelected] = useState<AdminOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,15 +88,6 @@ const AdminOrdersPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, "orders", id));
-      setSelected(null);
-    } catch (error: any) {
-      notifyError("Delete failed", error.message || String(error));
-    }
-  };
-
   const updateOrderStatus = async (orderId: string, newStatus: AdminOrder["status"]) => {
     try {
       await updateDoc(doc(db, "orders", orderId), {
@@ -103,40 +101,39 @@ const AdminOrdersPage = () => {
     }
   };
 
-
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
         <ActivityIndicator size="large" color="#E11D48" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.count}>{orders.length} orders</Text>
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <Text style={[styles.count, { color: subTextColor }]}>{orders.length} orders</Text>
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: borderColor }]} />}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.row} onPress={() => setSelected(item)} activeOpacity={0.75}>
             <View style={styles.rowLeft}>
-              <Text style={styles.orderId}>#{item.id.slice(-6)}</Text>
-              <Text style={styles.customerName}>{item.name}</Text>
-              <Text style={styles.date}>{item.date} · {item.items.length} item{item.items.length > 1 ? "s" : ""}</Text>
+              <Text style={[styles.orderId, { color: textColor }]}>#{item.id.slice(-6)}</Text>
+              <Text style={[styles.customerName, { color: subTextColor }]}>{item.name}</Text>
+              <Text style={[styles.date, { color: isDark ? "#4B5563" : "#9CA3AF" }]}>{item.date} · {item.items.length} item{item.items.length > 1 ? "s" : ""}</Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={styles.amount}>₹{item.total?.toLocaleString("en-IN") || 0}</Text>
+              <Text style={[styles.amount, { color: textColor }]}>₹{item.total?.toLocaleString("en-IN") || 0}</Text>
               <StatusBadge status={item.status} />
             </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No orders yet</Text>
+            <Text style={[styles.emptyText, { color: subTextColor }]}>No orders yet</Text>
           </View>
         }
       />
@@ -145,50 +142,38 @@ const AdminOrdersPage = () => {
       <ModalForm open={!!selected} onClose={() => setSelected(null)} title="Order Details">
         {selected && (
           <View style={styles.detail}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Order ID</Text>
-              <Text style={styles.detailValue}>#{selected.id.slice(-6)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Customer</Text>
-              <Text style={styles.detailValue}>{selected.name}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Phone</Text>
-              <Text style={styles.detailValue}>{selected.phone}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Address</Text>
-              <Text style={[styles.detailValue, { flexWrap: "wrap", flex: 1 }]}>
-                {selected.address}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>₹{selected.total?.toLocaleString("en-IN") || 0}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Items</Text>
-              <Text style={styles.detailValue}>{selected.items.length}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Payment</Text>
+            {[
+              { label: "Order ID", value: `#${selected.id.slice(-6)}` },
+              { label: "Customer", value: selected.name },
+              { label: "Phone", value: selected.phone },
+              { label: "Address", value: selected.address },
+              { label: "Amount", value: `₹${selected.total?.toLocaleString("en-IN") || 0}` },
+              { label: "Items", value: selected.items.length },
+            ].map((d) => (
+              <View key={d.label} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+                <Text style={[styles.detailLabel, { color: subTextColor }]}>{d.label}</Text>
+                <Text style={[styles.detailValue, { color: textColor }]}>{d.value}</Text>
+              </View>
+            ))}
+            
+            <View style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.detailLabel, { color: subTextColor }]}>Payment</Text>
               <StatusBadge status={selected.paymentStatus} variant="payment" />
             </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Order Status</Text>
+            <View style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.detailLabel, { color: subTextColor }]}>Order Status</Text>
               <StatusBadge status={selected.status} />
             </View>
 
             {/* Items List */}
             {selected.items.length > 0 && (
               <>
-                <Text style={styles.itemsTitle}>Items Ordered:</Text>
+                <Text style={[styles.itemsTitle, { color: textColor }]}>Items Ordered:</Text>
                 {selected.items.map((item, idx) => (
-                  <View key={idx} style={styles.itemRow}>
+                  <View key={idx} style={[styles.itemRow, { backgroundColor: isDark ? "#374151" : "#F9FAFB" }]}>
                     <View>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+                      <Text style={[styles.itemName, { color: textColor }]}>{item.name}</Text>
+                      <Text style={[styles.itemQty, { color: subTextColor }]}>Qty: {item.quantity}</Text>
                     </View>
                     <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
                   </View>
@@ -197,15 +182,15 @@ const AdminOrdersPage = () => {
             )}
 
             {/* Status Update Buttons */}
-            <Text style={styles.updateLabel}>Update Order Status</Text>
+            <Text style={[styles.updateLabel, { color: subTextColor }]}>Update Order Status</Text>
             <View style={styles.statusBtns}>
               {(["pending", "processing", "delivered", "cancelled"] as AdminOrder["status"][]).map((s) => (
                 <TouchableOpacity
                   key={s}
-                  style={[styles.statusBtn, selected.status === s && styles.statusBtnActive]}
+                  style={[styles.statusBtn, { borderColor: borderColor }, selected.status === s && styles.statusBtnActive]}
                   onPress={() => updateOrderStatus(selected.id, s)}
                 >
-                  <Text style={[styles.statusBtnTxt, selected.status === s && styles.statusBtnTxtActive]}>
+                  <Text style={[styles.statusBtnTxt, { color: subTextColor }, selected.status === s && styles.statusBtnTxtActive]}>
                     {s.charAt(0).toUpperCase() + s.slice(1)}
                   </Text>
                 </TouchableOpacity>

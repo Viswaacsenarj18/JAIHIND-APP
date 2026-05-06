@@ -151,18 +151,19 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         createdAt: serverTimestamp(),
       });
 
-      // Create notification for admin - wrap in try/catch so it doesn't block the order if permissions fail
+      // Create notification for admin
       try {
         await addDoc(collection(db, "notifications"), {
-          type: "admin",
+          recipientId: "admin",
+          type: "order",
           title: "New Order Received",
-          message: `New order #${orderRef.id.slice(-6)} from ${name}`,
+          message: `Order #${orderRef.id.slice(-6)} placed by ${name}`,
           orderId: orderRef.id,
-          amount: total,
+          isRead: false,
           createdAt: serverTimestamp(),
         });
       } catch (notifErr) {
-        console.warn("⚠️ Could not create admin notification (likely permissions):", notifErr);
+        console.warn("⚠️ Could not create admin notification:", notifErr);
       }
 
       return orderRef.id;
@@ -179,6 +180,25 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         status,
         updatedAt: serverTimestamp(),
       });
+
+      // Find the order to get the userId for notification
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        try {
+          await addDoc(collection(db, "notifications"), {
+            recipientId: order.userId,
+            type: "status",
+            title: "Order Update",
+            message: `Your order #${orderId.slice(-6)} is now ${status.toUpperCase()}`,
+            orderId: orderId,
+            isRead: false,
+            createdAt: serverTimestamp(),
+          });
+        } catch (notifErr) {
+          console.warn("⚠️ Could not create user notification:", notifErr);
+        }
+      }
+
       Alert.alert("Success", "Order status updated");
     } catch (error) {
       console.error("Error updating order:", error);

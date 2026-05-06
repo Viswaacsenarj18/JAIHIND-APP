@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 interface DashboardCardProps {
   title:    string;
@@ -9,37 +10,44 @@ interface DashboardCardProps {
   trendUp?: boolean;
 }
 
-const DashboardCard = ({ title, value, icon: Icon, trend, trendUp }: DashboardCardProps) => (
-  <View style={styles.card}>
-    <View style={styles.row}>
-      <View style={styles.textCol}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.value}>{value}</Text>
-        {trend && (
-          <Text style={[styles.trend, trendUp ? styles.trendUp : styles.trendDown]}>
-            {trendUp ? "↑" : "↓"} {trend}
-          </Text>
-        )}
-      </View>
-      <View style={styles.iconBox}>
-        <Icon size={20} color="#E11D48" />
+const DashboardCard = ({ title, value, icon: Icon, trend, trendUp }: DashboardCardProps) => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#F0F0F0";
+
+  return (
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderColor }]}>
+      <View style={styles.row}>
+        <View style={styles.textCol}>
+          <Text style={[styles.title, { color: subTextColor }]}>{title}</Text>
+          <Text style={[styles.value, { color: textColor }]}>{value}</Text>
+          {trend && (
+            <Text style={[styles.trend, trendUp ? styles.trendUp : styles.trendDown]}>
+              {trendUp ? "↑" : "↓"} {trend}
+            </Text>
+          )}
+        </View>
+        <View style={[styles.iconBox, isDark && { backgroundColor: "rgba(225,29,72,0.15)" }]}>
+          <Icon size={20} color="#E11D48" />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default DashboardCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#F0F0F0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
   },
@@ -53,17 +61,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   value: {
     fontSize: 26,
-    fontWeight: "800",
-    color: "#111111",
+    fontWeight: "900",
   },
   trend: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     marginTop: 2,
   },
   trendUp: {

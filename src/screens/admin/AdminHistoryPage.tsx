@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { 
   UserPlus, 
@@ -13,8 +14,9 @@ import {
   Package, 
   Grid3x3, 
   History as HistoryIcon,
-  Search,
-  X
+  Trash2,
+  Bell,
+  Info
 } from "lucide-react-native";
 import { 
   collection, 
@@ -22,87 +24,109 @@ import {
   onSnapshot, 
   orderBy, 
   limit,
-  Timestamp 
+  doc,
+  deleteDoc,
+  getDocs
 } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { useTheme } from "../../context/ThemeContext";
 
 interface HistoryItem {
   id: string;
-  type: "user" | "order" | "product" | "category";
+  type: "user" | "order" | "product" | "category" | "notification";
   title: string;
   subtitle: string;
   timestamp: any;
   icon: any;
   color: string;
+  originalId: string;
+  collectionName: string;
 }
 
+const typeConfig = {
+  user:         { icon: UserPlus,    color: "#3B82F6", coll: "users" },
+  order:        { icon: ShoppingBag, color: "#E11D48", coll: "orders" },
+  product:      { icon: Package,     color: "#10B981", coll: "products" },
+  category:     { icon: Grid3x3,     color: "#F59E0B", coll: "categories" },
+  notification: { icon: Bell,        color: "#8B5CF6", coll: "activities" },
+};
+
 const AdminHistoryPage = () => {
+  const { adminTheme } = useTheme();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string | null>(null);
 
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F9FAFB";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#E5E7EB";
+
   useEffect(() => {
-    // We listen to multiple collections to build a live history
-    // In a production app, you'd have a specific "activity" collection
-    // Here we combine Users and Orders for a "live" feel
+    // We'll just listen to activities primarily to avoid the nested snapshot hell which likely causes the hang
+    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(50));
     
-    let combinedHistory: HistoryItem[] = [];
-
-    const usersUnsub = onSnapshot(query(collection(db, "users"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
-      const userLogs: HistoryItem[] = snap.docs.map(doc => ({
-        id: "u_" + doc.id,
-        type: "user",
-        title: "New User Registered",
-        subtitle: doc.data().name || "New Customer",
-        timestamp: doc.data().createdAt,
-        icon: UserPlus,
-        color: "#3B82F6"
+    const unsub = onSnapshot(q, (snap) => {
+      const logs: HistoryItem[] = snap.docs.map(d => ({
+        id: d.id,
+        originalId: d.id,
+        collectionName: "activities",
+        type: d.data().type || "notification",
+        title: d.data().title || "Activity",
+        subtitle: d.data().subtitle || "",
+        timestamp: d.data().timestamp,
+        icon: (typeConfig as any)[d.data().type]?.icon || Info,
+        color: (typeConfig as any)[d.data().type]?.color || "#6B7280"
       }));
-      updateHistory("user", userLogs);
-    });
-
-    const ordersUnsub = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
-      const orderLogs: HistoryItem[] = snap.docs.map(doc => ({
-        id: "o_" + doc.id,
-        type: "order",
-        title: "New Order Placed",
-        subtitle: `Order #${doc.id.slice(-6)} • ₹${doc.data().total || 0}`,
-        timestamp: doc.data().createdAt,
-        icon: ShoppingBag,
-        color: "#E11D48"
-      }));
-      updateHistory("order", orderLogs);
-    });
-
-    // Helper to merge and sort
-    const updateHistory = (type: string, logs: HistoryItem[]) => {
-      setHistory(prev => {
-        const otherTypes = prev.filter(item => !item.id.startsWith(type === "user" ? "u_" : "o_"));
-        const merged = [...otherTypes, ...logs].sort((a, b) => {
-          const tA = a.timestamp?.seconds || 0;
-          const tB = b.timestamp?.seconds || 0;
-          return tB - tA;
-        });
-        return merged;
-      });
+      
+      setHistory(logs);
       setLoading(false);
-    };
+    }, (err) => {
+      console.error("History fetch error:", err);
+      setLoading(false);
+      // Fallback: try once to see if there's any data
+      Alert.alert("Notice", "Activity logs might be empty or restricted.");
+    });
 
-    return () => {
-      usersUnsub();
-      ordersUnsub();
-    };
+    return () => unsub();
   }, []);
+
+  const handleDelete = (item: HistoryItem) => {
+    Alert.alert(
+      "Delete Log",
+      "Remove this entry from history?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "activities", item.originalId));
+            } catch (err) {
+              Alert.alert("Error", "Could not delete log.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const formatTime = (ts: any) => {
     if (!ts) return "Just now";
-    const date = ts.toDate ? ts.toDate() : new Date(ts);
-    return date.toLocaleString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    try {
+      const date = ts.toDate ? ts.toDate() : new Date(ts);
+      return date.toLocaleString('en-IN', { 
+        day: 'numeric', 
+        month: 'short', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch(e) {
+      return "N/A";
+    }
   };
 
   const filteredData = filterType 
@@ -111,36 +135,35 @@ const AdminHistoryPage = () => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: bg }]}>
         <ActivityIndicator size="large" color="#E11D48" />
-        <Text style={styles.loadingText}>Fetching activity logs...</Text>
+        <Text style={[styles.loadingText, { color: subTextColor }]}>Loading history...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Filter Tabs */}
-      <View style={styles.filterBar}>
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <View style={[styles.filterBar, { backgroundColor: isDark ? "#111111" : "#FFF", borderBottomColor: borderColor }]}>
         <TouchableOpacity 
-          style={[styles.filterBtn, !filterType && styles.filterBtnActive]}
+          style={[styles.filterBtn, !filterType && styles.filterBtnActive, isDark && !filterType && { backgroundColor: "#E11D48" }, isDark && filterType && { backgroundColor: "#222" }]}
           onPress={() => setFilterType(null)}
         >
-          <Text style={[styles.filterText, !filterType && styles.filterTextActive]}>All</Text>
+          <Text style={[styles.filterText, !filterType && styles.filterTextActive, isDark && { color: filterType ? subTextColor : "#FFF" }]}>All</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterBtn, filterType === "user" && styles.filterBtnActive]}
+          style={[styles.filterBtn, filterType === "user" && styles.filterBtnActive, isDark && filterType === "user" && { backgroundColor: "#E11D48" }, isDark && filterType !== "user" && { backgroundColor: "#222" }]}
           onPress={() => setFilterType("user")}
         >
-          <UserPlus size={14} color={filterType === "user" ? "#FFF" : "#6B7280"} />
-          <Text style={[styles.filterText, filterType === "user" && styles.filterTextActive]}>Users</Text>
+          <UserPlus size={14} color={filterType === "user" ? "#FFF" : subTextColor} />
+          <Text style={[styles.filterText, filterType === "user" && styles.filterTextActive, isDark && { color: filterType === "user" ? "#FFF" : subTextColor }]}>Users</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterBtn, filterType === "order" && styles.filterBtnActive]}
+          style={[styles.filterBtn, filterType === "order" && styles.filterBtnActive, isDark && filterType === "order" && { backgroundColor: "#E11D48" }, isDark && filterType !== "order" && { backgroundColor: "#222" }]}
           onPress={() => setFilterType("order")}
         >
-          <ShoppingBag size={14} color={filterType === "order" ? "#FFF" : "#6B7280"} />
-          <Text style={[styles.filterText, filterType === "order" && styles.filterTextActive]}>Orders</Text>
+          <ShoppingBag size={14} color={filterType === "order" ? "#FFF" : subTextColor} />
+          <Text style={[styles.filterText, filterType === "order" && styles.filterTextActive, isDark && { color: filterType === "order" ? "#FFF" : subTextColor }]}>Orders</Text>
         </TouchableOpacity>
       </View>
 
@@ -149,21 +172,28 @@ const AdminHistoryPage = () => {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <View style={styles.itemCard}>
+          <View style={[styles.itemCard, { backgroundColor: cardBg }]}>
             <View style={[styles.iconBox, { backgroundColor: item.color + "15" }]}>
               <item.icon size={20} color={item.color} />
             </View>
             <View style={styles.itemContent}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemSub}>{item.subtitle}</Text>
-              <Text style={styles.itemTime}>{formatTime(item.timestamp)}</Text>
+              <Text style={[styles.itemTitle, { color: textColor }]}>{item.title}</Text>
+              <Text style={[styles.itemSub, { color: isDark ? "#D1D5DB" : "#4B5563" }]}>{item.subtitle}</Text>
+              <Text style={[styles.itemTime, { color: subTextColor }]}>{formatTime(item.timestamp)}</Text>
             </View>
+            <TouchableOpacity 
+              onPress={() => handleDelete(item)}
+              style={styles.deleteBtn}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Trash2 size={18} color={subTextColor} />
+            </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <HistoryIcon size={48} color="#E5E7EB" />
-            <Text style={styles.emptyText}>No activity found</Text>
+            <HistoryIcon size={48} color={isDark ? "#222" : "#E5E7EB"} />
+            <Text style={[styles.emptyText, { color: subTextColor }]}>No activity logs found</Text>
           </View>
         }
       />
@@ -190,16 +220,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12, 
-    paddingVertical: 6, 
+    paddingVertical: 8, 
     borderRadius: 20, 
     backgroundColor: "#F3F4F6",
     gap: 6
   },
   filterBtnActive: { backgroundColor: "#E11D48" },
-  filterText: { fontSize: 12, fontWeight: "600", color: "#6B7280" },
+  filterText: { fontSize: 12, fontWeight: "700", color: "#6B7280" },
   filterTextActive: { color: "#FFF" },
 
-  list: { padding: 16, gap: 12 },
+  list: { padding: 16, gap: 12, paddingBottom: 40 },
   itemCard: {
     flexDirection: "row",
     backgroundColor: "#FFF",
@@ -209,14 +239,14 @@ const styles = StyleSheet.create({
     gap: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   iconBox: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -224,7 +254,8 @@ const styles = StyleSheet.create({
   itemTitle: { fontSize: 14, fontWeight: "700", color: "#111111" },
   itemSub: { fontSize: 13, color: "#4B5563", marginTop: 2 },
   itemTime: { fontSize: 11, color: "#9CA3AF", marginTop: 6 },
+  deleteBtn: { padding: 8, backgroundColor: "rgba(0,0,0,0.02)", borderRadius: 10 },
 
   empty: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 100, gap: 12 },
-  emptyText: { color: "#9CA3AF", fontSize: 15, fontWeight: "500" }
+  emptyText: { color: "#9CA3AF", fontSize: 15, fontWeight: "600" }
 });

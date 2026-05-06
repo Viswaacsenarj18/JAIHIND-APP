@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform,
-
 } from "react-native";
 import { Trash2, Eye } from "lucide-react-native";
 import { collection, query, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import ModalForm from "../../components/admin/ModalForm";
 import { useAdminAuth } from "../../context/AdminAuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 interface FirestoreUser {
   id: string;
@@ -19,6 +19,14 @@ interface FirestoreUser {
 }
 
 const AdminUsersPage = () => {
+  const { adminTheme } = useTheme();
+  const isDark = adminTheme === "dark";
+  const bg = isDark ? "#111111" : "#F8F8F8";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#111111";
+  const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? "#222222" : "#F0F0F0";
+
   const [users, setUsers] = useState<FirestoreUser[]>([]);
   const [selected, setSelected] = useState<FirestoreUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,14 +35,11 @@ const AdminUsersPage = () => {
 
   // 🔥 REAL-TIME USERS FROM FIRESTORE
   useEffect(() => {
-    console.log("🔄 AdminUsersPage: Setting up users listener...");
     const q = query(collection(db, "users"));
     const unsub = onSnapshot(q,
       (snapshot) => {
-        console.log(`✅ AdminUsersPage: Snapshot received with ${snapshot.docs.length} documents`);
         const userList: FirestoreUser[] = snapshot.docs.map(doc => {
           const data = doc.data();
-          console.log(`👤 User found: ID=${doc.id}, Name=${data.name}, Email=${data.email}, Role=${data.role}`);
           return {
             id: doc.id,
             name: data.name || "Unknown",
@@ -48,7 +53,6 @@ const AdminUsersPage = () => {
         setLoading(false);
       },
       (error) => {
-        console.error("❌ AdminUsersPage: Users fetch error:", error);
         Alert.alert("Error", "Failed to load users: " + error.message);
         setLoading(false);
       }
@@ -67,8 +71,6 @@ const AdminUsersPage = () => {
 
   const handleDelete = async (item: FirestoreUser) => {
     const { id, name, email } = item;
-    
-    // Prevent self-deletion
     if (admin?.email === email) {
       notifyError("Cannot Delete", "You cannot delete your own admin account.");
       return;
@@ -102,7 +104,6 @@ const AdminUsersPage = () => {
     }
   };
 
-
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "N/A";
     if (timestamp.toDate) {
@@ -113,54 +114,54 @@ const AdminUsersPage = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
         <ActivityIndicator size="large" color="#E11D48" />
-        <Text style={styles.loadingText}>Loading users...</Text>
+        <Text style={[styles.loadingText, { color: subTextColor }]}>Loading users...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.count}>{users.length} users</Text>
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <Text style={[styles.count, { color: subTextColor }]}>{users.length} users</Text>
       <FlatList
         data={users}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: borderColor }]} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No users found</Text>
+            <Text style={[styles.emptyText, { color: subTextColor }]}>No users found</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <View style={[styles.row, { backgroundColor: cardBg }]}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
             </View>
             <View style={[styles.info, { marginLeft: 12 }]}>
               <View style={styles.nameRow}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={[styles.name, { color: textColor }]}>{item.name}</Text>
                 {item.role && (
-                  <View style={[styles.roleBadge, { backgroundColor: item.role === 'admin' ? '#FEE2E2' : '#E0F2FE' }]}>
+                  <View style={[styles.roleBadge, { backgroundColor: item.role === 'admin' ? (isDark ? '#450a0a' : '#FEE2E2') : (isDark ? '#082f49' : '#E0F2FE') }]}>
                     <Text style={[styles.roleText, { color: item.role === 'admin' ? '#E11D48' : '#0369A1' }]}>{item.role}</Text>
                   </View>
                 )}
               </View>
-              <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
+              <Text style={[styles.email, { color: subTextColor }]} numberOfLines={1}>{item.email}</Text>
               {item.phone ? (
-                <Text style={styles.phone}>{item.phone}</Text>
+                <Text style={[styles.phone, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>{item.phone}</Text>
               ) : null}
-              <Text style={styles.meta}>Joined: {formatDate(item.createdAt)}</Text>
+              <Text style={[styles.meta, { color: isDark ? "#4B5563" : "#9CA3AF" }]}>Joined: {formatDate(item.createdAt)}</Text>
             </View>
             <View style={styles.actions}>
-              <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { marginRight: 6 }]}>
-                <Eye size={15} color="#6B7280" />
+              <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { backgroundColor: isDark ? "#374151" : "#F3F4F6", marginRight: 6 }]}>
+                <Eye size={15} color={subTextColor} />
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={() => handleDelete(item)} 
-                style={[styles.actionBtn, styles.deleteBtn]}
+                style={[styles.actionBtn, styles.deleteBtn, isDark && { backgroundColor: "rgba(225,29,72,0.15)" }]}
                 disabled={deletingId === item.id}
               >
                 {deletingId === item.id ? (
@@ -184,9 +185,9 @@ const AdminUsersPage = () => {
               { label: "User ID", value: selected.id },
               { label: "Joined", value: formatDate(selected.createdAt) },
             ].map(({ label, value }) => (
-              <View key={label} style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{label}</Text>
-                <Text style={styles.detailValue}>{value}</Text>
+              <View key={label} style={[styles.detailRow, { borderBottomColor: borderColor }]}>
+                <Text style={[styles.detailLabel, { color: subTextColor }]}>{label}</Text>
+                <Text style={[styles.detailValue, { color: textColor }]}>{value}</Text>
               </View>
             ))}
           </View>
