@@ -259,9 +259,26 @@ const ProductDetailScreen = () => {
         {/* DETAILS */}
         <View style={[styles.details, { backgroundColor: bg }]}>
           <Text style={[styles.name, { color: textPrimary }]}>{product.name}</Text>
-          <Text style={{ color: isDark ? "#E11D48" : "#111111", fontSize: 18, fontWeight: "800" }}>₹{product.price}</Text>
+          <View style={styles.priceRow}>
+            <Text style={[styles.priceText, { color: isDark ? "#E11D48" : "#111111" }]}>₹{product.price}</Text>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <Text style={[styles.originalPriceText, { color: textSecondary }]}>₹{product.originalPrice}</Text>
+            )}
+            {product.originalPrice && product.originalPrice > product.price && (
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountText}>
+                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                </Text>
+              </View>
+            )}
+          </View>
 
-          <Text style={{ color: textSecondary, marginTop: 8 }}>{product.description}</Text>
+          {product.description ? (
+            <View style={styles.descriptionSection}>
+              <Text style={[styles.sectionTitle, { color: textPrimary }]}>Description</Text>
+              <Text style={[styles.descriptionText, { color: textSecondary }]}>{product.description}</Text>
+            </View>
+          ) : null}
 
           {/* SIZES */}
           {product.hasSizes && product.sizes && (
@@ -404,7 +421,44 @@ const styles = StyleSheet.create({
   },
 
   details: { padding: 16 },
-  name: { fontSize: 20, fontWeight: "bold" },
+  name: { fontSize: 22, fontWeight: "800", marginBottom: 4 },
+
+  priceRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 12, 
+    marginVertical: 4 
+  },
+  priceText: { 
+    fontSize: 24, 
+    fontWeight: "900" 
+  },
+  originalPriceText: { 
+    fontSize: 16, 
+    textDecorationLine: "line-through", 
+    opacity: 0.6 
+  },
+  discountBadge: { 
+    backgroundColor: "#DCFCE7", 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 6 
+  },
+  discountText: { 
+    color: "#166534", 
+    fontSize: 12, 
+    fontWeight: "800" 
+  },
+
+  descriptionSection: { 
+    marginTop: 20, 
+    marginBottom: 10 
+  },
+  descriptionText: { 
+    fontSize: 15, 
+    lineHeight: 22, 
+    marginTop: 4 
+  },
 
   featuresRow: { flexDirection: "row", gap: 10, marginTop: 10 },
 
