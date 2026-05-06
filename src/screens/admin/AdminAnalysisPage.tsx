@@ -38,7 +38,12 @@ const AdminAnalysisPage = () => {
     totalRevenue: 0,
     totalOrders: 0,
     avgOrderValue: 0,
-    growth: 0
+    growth: 0,
+    todayOrders: 0,
+    todayRevenue: 0,
+    yesterdayOrders: 0,
+    yesterdayRevenue: 0,
+    bestSellingProduct: null as any
   });
 
   useEffect(() => {
@@ -47,7 +52,8 @@ const AdminAnalysisPage = () => {
         id: doc.id,
         total: doc.data().total || 0,
         createdAt: doc.data().createdAt?.toDate() || new Date(),
-        status: doc.data().status
+        status: doc.data().status,
+        items: doc.data().items || []
       }));
 
       processData(orders);
@@ -69,6 +75,18 @@ const AdminAnalysisPage = () => {
     const ordersByDay = new Array(7).fill(0);
 
     let totalRevenue = 0;
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    let todayOrders = 0;
+    let todayRevenue = 0;
+    let yesterdayOrders = 0;
+    let yesterdayRevenue = 0;
+    
+    const productCounts: Record<string, {name: string, count: number, revenue: number}> = {};
 
     orders.forEach(order => {
       totalRevenue += order.total;
@@ -77,6 +95,34 @@ const AdminAnalysisPage = () => {
       if (index !== -1) {
         revenueByDay[index] += order.total;
         ordersByDay[index] += 1;
+      }
+      
+      const orderTime = order.createdAt.getTime();
+      if (orderTime >= today.getTime()) {
+        todayOrders++;
+        todayRevenue += order.total;
+      } else if (orderTime >= yesterday.getTime() && orderTime < today.getTime()) {
+        yesterdayOrders++;
+        yesterdayRevenue += order.total;
+      }
+      
+      if (order.status !== 'cancelled' && order.status !== 'failed') {
+        order.items?.forEach((item: any) => {
+          if (!productCounts[item.productId]) {
+            productCounts[item.productId] = { name: item.name, count: 0, revenue: 0 };
+          }
+          productCounts[item.productId].count += item.quantity || 1;
+          productCounts[item.productId].revenue += (item.price * (item.quantity || 1));
+        });
+      }
+    });
+    
+    let bestSellingProduct = null;
+    let maxCount = 0;
+    Object.values(productCounts).forEach(p => {
+      if (p.count > maxCount) {
+        maxCount = p.count;
+        bestSellingProduct = p;
       }
     });
 
@@ -95,7 +141,12 @@ const AdminAnalysisPage = () => {
       totalRevenue,
       totalOrders: orders.length,
       avgOrderValue: orders.length > 0 ? Math.round(totalRevenue / orders.length) : 0,
-      growth: 12 // Mock growth %
+      growth: 12, // Mock growth %
+      todayOrders,
+      todayRevenue,
+      yesterdayOrders,
+      yesterdayRevenue,
+      bestSellingProduct
     });
   };
 
@@ -141,6 +192,41 @@ const AdminAnalysisPage = () => {
           <Text style={[styles.statValue, { color: textColor }]}>{stats.totalOrders}</Text>
         </View>
       </View>
+      
+      {/* Day-wise Performance */}
+      <View style={styles.statsGrid}>
+        <View style={[styles.statCard, { backgroundColor: cardBg, borderWidth: 1, borderColor: isDark ? "#222" : "#F3F4F6", shadowOpacity: 0 }]}>
+          <Text style={[styles.dayLabel, { color: subTextColor }]}>Today's Performance</Text>
+          <View style={styles.dayRow}>
+            <Text style={[styles.dayValue, { color: textColor }]}>₹{stats.todayRevenue.toLocaleString("en-IN")}</Text>
+            <Text style={[styles.dayOrders, { color: subTextColor }]}>{stats.todayOrders} orders</Text>
+          </View>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: cardBg, borderWidth: 1, borderColor: isDark ? "#222" : "#F3F4F6", shadowOpacity: 0 }]}>
+          <Text style={[styles.dayLabel, { color: subTextColor }]}>Yesterday's Performance</Text>
+          <View style={styles.dayRow}>
+            <Text style={[styles.dayValue, { color: textColor }]}>₹{stats.yesterdayRevenue.toLocaleString("en-IN")}</Text>
+            <Text style={[styles.dayOrders, { color: subTextColor }]}>{stats.yesterdayOrders} orders</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Best Selling Product */}
+      {stats.bestSellingProduct && (
+        <View style={[styles.bestSellerCard, { backgroundColor: isDark ? "rgba(245,158,11,0.1)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.2)" : "#FEF3C7" }]}>
+          <View style={styles.bestSellerHeader}>
+            <View style={styles.bestSellerBadge}>
+              <Text style={styles.bestSellerBadgeText}>🏆 BEST SELLING PRODUCT</Text>
+            </View>
+          </View>
+          <Text style={[styles.bestSellerName, { color: isDark ? "#FCD34D" : "#B45309" }]} numberOfLines={1}>{stats.bestSellingProduct.name}</Text>
+          <View style={styles.bestSellerStats}>
+            <Text style={[styles.bestSellerStatText, { color: isDark ? "#FDE68A" : "#D97706" }]}>{stats.bestSellingProduct.count} units sold</Text>
+            <Text style={[styles.bestSellerStatText, { color: isDark ? "#FDE68A" : "#D97706" }]}>·</Text>
+            <Text style={[styles.bestSellerStatText, { color: isDark ? "#FDE68A" : "#D97706" }]}>₹{stats.bestSellingProduct.revenue.toLocaleString("en-IN")} revenue</Text>
+          </View>
+        </View>
+      )}
 
       {/* Revenue Chart */}
       <View style={[styles.chartCard, { backgroundColor: cardBg }]}>
@@ -218,6 +304,19 @@ const styles = StyleSheet.create({
   iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   statLabel: { fontSize: 12, color: "#6B7280", fontWeight: "500" },
   statValue: { fontSize: 18, fontWeight: "800", color: "#111111", marginTop: 2 },
+
+  dayLabel: { fontSize: 11, fontWeight: "600", textTransform: "uppercase", marginBottom: 6 },
+  dayRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
+  dayValue: { fontSize: 16, fontWeight: "800" },
+  dayOrders: { fontSize: 12, fontWeight: "500", paddingBottom: 1 },
+
+  bestSellerCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 4 },
+  bestSellerHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  bestSellerBadge: { backgroundColor: "#F59E0B", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  bestSellerBadgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
+  bestSellerName: { fontSize: 16, fontWeight: "800", marginBottom: 6 },
+  bestSellerStats: { flexDirection: "row", alignItems: "center", gap: 6 },
+  bestSellerStatText: { fontSize: 12, fontWeight: "600" },
 
   chartCard: { 
     backgroundColor: "#FFF", 

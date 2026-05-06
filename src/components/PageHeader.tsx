@@ -11,6 +11,8 @@ import { useNavigation } from "@react-navigation/native";
 import { ArrowLeft } from "lucide-react-native";
 
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 interface PageHeaderProps {
   title: string;
@@ -20,8 +22,12 @@ interface PageHeaderProps {
 
 const PageHeader = ({ title, showBack = true, right }: PageHeaderProps) => {
   const navigation = useNavigation();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, adminTheme } = useTheme();
+  const { user } = useAuth();
+  const { isAdminAuthenticated } = useAdminAuth();
+
+  const isAdmin = isAdminAuthenticated || user?.role === 'admin';
+  const isDark = isAdmin ? adminTheme === "dark" : theme === "dark";
 
   return (
     <View style={[styles.wrapper, isDark && styles.wrapperDark]}>
@@ -58,8 +64,8 @@ const styles = StyleSheet.create({
     paddingTop: ANDROID_TOP,
   },
   wrapperDark: {
-    backgroundColor: "#1F2937",
-    borderBottomColor: "#374151",
+    backgroundColor: "#111111",
+    borderBottomColor: "#222222",
   },
   inner: {
     height: 56,
@@ -83,7 +89,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backBtnDark: {
-    backgroundColor: "#374151",
+    backgroundColor: "#222222",
   },
   title: {
     fontSize: 20,

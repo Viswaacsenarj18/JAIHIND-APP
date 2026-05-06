@@ -13,6 +13,7 @@ export const logActivity = async (activity: {
       ...activity,
       timestamp: serverTimestamp(),
     });
+    console.log(`📝 Activity logged: ${activity.title}`);
   } catch (err) {
     console.error("Activity logging failed:", err);
   }

@@ -12,6 +12,7 @@ import {
   deleteDoc,
   where,
   collectionGroup,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { CartItem } from "./CartContext";
@@ -164,6 +165,30 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         });
       } catch (notifErr) {
         console.warn("⚠️ Could not create admin notification:", notifErr);
+      }
+
+      // Automatically reduce product inventory stock
+      for (const item of sanitizedItems) {
+        try {
+          const productRef = doc(db, "products", item.productId);
+          const productSnap = await getDoc(productRef);
+          if (productSnap.exists()) {
+            const data = productSnap.data();
+            // Fallback to 100 if stock is undefined so the subtraction works correctly.
+            const currentStock = typeof data.stock === 'number' ? data.stock : 100;
+            const newStock = Math.max(0, currentStock - item.quantity);
+            const inStock = newStock > 0;
+            
+            await updateDoc(productRef, {
+              stock: newStock,
+              inStock: inStock,
+              updatedAt: serverTimestamp(),
+            });
+            console.log(`📦 Updated stock for ${item.name}: ${currentStock} -> ${newStock}`);
+          }
+        } catch (stockErr) {
+          console.error(`❌ Failed to update stock for ${item.name}:`, stockErr);
+        }
       }
 
       return orderRef.id;

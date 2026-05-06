@@ -379,8 +379,10 @@ const AdminCategoriesPage = () => {
 
   const numColumns = IS_TABLET ? 3 : 2;
 
+  const cardWidth = (SCREEN_WIDTH - (IS_SMALL ? 24 : 32) - 12) / numColumns;
+
   const CategoryCard = ({ item }: { item: Category }) => (
-    <View style={[styles.card, { width: (SCREEN_WIDTH - 48 - (numColumns - 1) * 12) / numColumns, backgroundColor: cardBg }]}>
+    <View style={[styles.card, { width: cardWidth, maxWidth: cardWidth, backgroundColor: cardBg }]}>
       <View style={styles.imageWrapper}>
         <Image source={{ uri: item.image }} style={styles.image} resizeMode="contain" />
         <View style={styles.overlay}>
@@ -617,7 +619,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { paddingHorizontal: IS_SMALL ? 12 : 16, paddingBottom: 32, paddingTop: 8 },
-  row: { justifyContent: "flex-start", marginBottom: IS_SMALL ? 10 : 12 },
+  row: { justifyContent: "flex-start", gap: 12, marginBottom: IS_SMALL ? 10 : 12 },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: IS_SMALL ? 10 : 14,

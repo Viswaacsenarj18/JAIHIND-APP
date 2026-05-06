@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { uploadImageToCloudinary } from "../services/cloudinary";
 import { auth, db, storage } from "../firebaseConfig";
 import { Platform } from "react-native";
+import { logActivity } from "../utils/activityLogger";
 
 interface User {
   id: string;
@@ -145,6 +146,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updatedAt: new Date().toISOString(),
     };
     await setDoc(doc(db, "users", uid), userData);
+
+    // Log the registration to the admin history
+    try {
+      await logActivity({
+        type: "user",
+        title: "New User Registered",
+        subtitle: `${name.trim()} (${email.trim().toLowerCase()})`,
+        details: userData
+      });
+    } catch (logErr) {
+      console.warn("⚠️ Could not log user registration activity:", logErr);
+    }
   };
 
   const changePassword = async (currentPw: string, newPw: string) => {

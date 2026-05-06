@@ -11,11 +11,15 @@ import {
   updateDoc,
   doc,
   deleteDoc,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
+import { Trash2 } from "lucide-react-native";
 import { db } from "../../firebaseConfig";
 import StatusBadge from "../../components/admin/StatusBadge";
 import ModalForm from "../../components/admin/ModalForm";
 import { useTheme } from "../../context/ThemeContext";
+import { logActivity } from "../../utils/activityLogger";
 
 export interface AdminOrder {
   id: string;
@@ -49,6 +53,7 @@ const AdminOrdersPage = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selected, setSelected] = useState<AdminOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // 🔥 REAL-TIME FIRESTORE SYNC
   useEffect(() => {
@@ -90,14 +95,93 @@ const AdminOrdersPage = () => {
 
   const updateOrderStatus = async (orderId: string, newStatus: AdminOrder["status"]) => {
     try {
+      const order = orders.find(o => o.id === orderId);
       await updateDoc(doc(db, "orders", orderId), {
         status: newStatus,
         updatedAt: new Date().toISOString(),
       });
+      
+      // Log status change to history
+      await logActivity({
+        type: "order",
+        title: `Order #${orderId.slice(-6)} status updated`,
+        subtitle: `Status changed to "${newStatus}" — Customer: ${order?.name || "Unknown"} — ₹${order?.total?.toLocaleString("en-IN") || 0}`,
+      });
+
       setSelected(null);
       Alert.alert("Success", `Order status updated to ${newStatus}`);
     } catch (error: any) {
       notifyError("Update failed", error.message || String(error));
+    }
+  };
+
+  // DELETE ORDER — Save to history first, then remove
+  const handleDeleteOrder = (order: AdminOrder) => {
+    const title = "Delete Order";
+    const message = `Are you sure you want to delete order #${order.id.slice(-6)} by ${order.name}?\n\nThis order will be saved to history before deletion.`;
+    const onConfirm = () => performDeleteOrder(order);
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm) {
+        if (window.confirm(`${title}\n\n${message}`)) {
+          onConfirm();
+        }
+      }
+    } else {
+      Alert.alert(title, message, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onConfirm },
+      ]);
+    }
+  };
+
+  const performDeleteOrder = async (order: AdminOrder) => {
+    try {
+      setDeletingId(order.id);
+      console.log(`🗑️ Deleting order: ${order.id}`);
+
+      // 1. Log full order data to history/activities BEFORE deleting
+      await logActivity({
+        type: "order",
+        title: `Order #${order.id.slice(-6)} deleted`,
+        subtitle: `Customer: ${order.name} | ₹${order.total?.toLocaleString("en-IN") || 0} | ${order.items.length} item(s) | Status: ${order.status} | Date: ${order.date}`,
+        details: {
+          orderId: order.id,
+          customerName: order.name,
+          phone: order.phone,
+          address: order.address,
+          items: order.items,
+          total: order.total,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          orderDate: order.date,
+          deletedAt: new Date().toISOString(),
+        },
+      });
+
+      // 2. Also store in dedicated 'order_history' collection for full backup
+      await addDoc(collection(db, "order_history"), {
+        ...order,
+        deletedAt: serverTimestamp(),
+        originalOrderId: order.id,
+      });
+
+      // 3. Now delete from orders
+      await deleteDoc(doc(db, "orders", order.id));
+
+      console.log(`✅ Order ${order.id} deleted and saved to history`);
+
+      setSelected(null);
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined') window.alert("Order deleted and saved to history");
+      } else {
+        Alert.alert("Success", "Order deleted and saved to history");
+      }
+    } catch (error: any) {
+      console.error("❌ Delete error:", error);
+      notifyError("Delete failed", error.message || String(error));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -119,17 +203,31 @@ const AdminOrdersPage = () => {
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: borderColor }]} />}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onPress={() => setSelected(item)} activeOpacity={0.75}>
-            <View style={styles.rowLeft}>
-              <Text style={[styles.orderId, { color: textColor }]}>#{item.id.slice(-6)}</Text>
-              <Text style={[styles.customerName, { color: subTextColor }]}>{item.name}</Text>
-              <Text style={[styles.date, { color: isDark ? "#4B5563" : "#9CA3AF" }]}>{item.date} · {item.items.length} item{item.items.length > 1 ? "s" : ""}</Text>
-            </View>
-            <View style={styles.rowRight}>
-              <Text style={[styles.amount, { color: textColor }]}>₹{item.total?.toLocaleString("en-IN") || 0}</Text>
-              <StatusBadge status={item.status} />
-            </View>
-          </TouchableOpacity>
+          <View style={styles.row}>
+            <TouchableOpacity style={styles.rowContent} onPress={() => setSelected(item)} activeOpacity={0.75}>
+              <View style={styles.rowLeft}>
+                <Text style={[styles.orderId, { color: textColor }]}>#{item.id.slice(-6)}</Text>
+                <Text style={[styles.customerName, { color: subTextColor }]}>{item.name}</Text>
+                <Text style={[styles.date, { color: isDark ? "#4B5563" : "#9CA3AF" }]}>{item.date} · {item.items.length} item{item.items.length > 1 ? "s" : ""}</Text>
+              </View>
+              <View style={styles.rowRight}>
+                <Text style={[styles.amount, { color: textColor }]}>₹{item.total?.toLocaleString("en-IN") || 0}</Text>
+                <StatusBadge status={item.status} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.deleteRowBtn, { backgroundColor: isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.08)" }]}
+              onPress={() => handleDeleteOrder(item)}
+              activeOpacity={0.7}
+              disabled={deletingId === item.id}
+            >
+              {deletingId === item.id ? (
+                <ActivityIndicator size="small" color="#EF4444" />
+              ) : (
+                <Trash2 size={16} color="#EF4444" />
+              )}
+            </TouchableOpacity>
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -196,6 +294,23 @@ const AdminOrdersPage = () => {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Delete Order Button */}
+            <TouchableOpacity
+              style={styles.deleteOrderBtn}
+              onPress={() => handleDeleteOrder(selected)}
+              activeOpacity={0.8}
+              disabled={deletingId === selected.id}
+            >
+              {deletingId === selected.id ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Trash2 size={16} color="#FFFFFF" />
+                  <Text style={styles.deleteOrderBtnText}>Delete Order</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
         )}
       </ModalForm>
@@ -211,13 +326,23 @@ const styles = StyleSheet.create({
   count: { fontSize: 13, color: "#6B7280", paddingHorizontal: 14, paddingVertical: 10 },
   list: { paddingHorizontal: 14, paddingBottom: 32 },
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: "#F0F0F0" },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14 },
+  row: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
+  rowContent: { flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
   rowLeft: { flex: 1 },
   orderId: { fontSize: 13, fontWeight: "700", color: "#111111" },
   customerName: { fontSize: 12, color: "#6B7280", marginTop: 2 },
   date: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
   rowRight: { alignItems: "flex-end" },
   amount: { fontSize: 14, fontWeight: "800", color: "#111111" },
+  deleteRowBtn: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 10, 
+    alignItems: "center", 
+    justifyContent: "center", 
+    marginLeft: 8,
+    backgroundColor: "rgba(239,68,68,0.08)",
+  },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   emptyText: { fontSize: 16, color: "#9CA3AF" },
   detail: { },
@@ -235,4 +360,15 @@ const styles = StyleSheet.create({
   statusBtnActive: { borderColor: "#E11D48", backgroundColor: "rgba(225,29,72,0.10)" },
   statusBtnTxt: { fontSize: 11, fontWeight: "700", color: "#6B7280" },
   statusBtnTxtActive: { color: "#E11D48" },
+  deleteOrderBtn: { 
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#EF4444",
+  },
+  deleteOrderBtnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 });

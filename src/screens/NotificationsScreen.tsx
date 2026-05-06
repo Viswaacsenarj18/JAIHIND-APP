@@ -52,11 +52,12 @@ const NotificationsScreen = () => {
   const { user } = useAuth();
   const { isAdminAuthenticated, admin } = useAdminAuth();
   
-  // Use separate theme for admin
-  const isDark = isAdminAuthenticated ? adminTheme === "dark" : theme === "dark";
+  // Use separate theme for admin. Check both context and user role.
+  const isAdmin = isAdminAuthenticated || user?.role === 'admin';
+  const isDark = isAdmin ? adminTheme === "dark" : theme === "dark";
   
-  const bg = isDark ? "#111827" : "#F8F8F8";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const bg = isDark ? "#111111" : "#F8F8F8";
+  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
   const titleColor = isDark ? "#FFFFFF" : "#111111";
   const msgColor = isDark ? "#9CA3AF" : "#6B7280";
 
@@ -159,7 +160,7 @@ const NotificationsScreen = () => {
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <PageHeader title="Notifications" />
         <View style={styles.empty}>
-          <View style={[styles.emptyIcon, isDark && { backgroundColor: "#1F2937" }]}><Bell size={32} color={isDark ? "#9CA3AF" : "#9CA3AF"} /></View>
+          <View style={[styles.emptyIcon, isDark && { backgroundColor: "#1A1A1A" }]}><Bell size={32} color={isDark ? "#4B5563" : "#9CA3AF"} /></View>
           <Text style={[styles.emptyTitle, isDark && { color: "#FFFFFF" }]}>No notifications</Text>
           <Text style={[styles.emptySub, isDark && { color: "#9CA3AF" }]}>You're all caught up!</Text>
         </View>
