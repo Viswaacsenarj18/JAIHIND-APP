@@ -80,7 +80,7 @@ const ProfileScreen = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
 
-  const userOrders = allOrders.filter((o) => o.userId === user?.id);
+  const userOrders = user?.role === 'admin' ? allOrders : allOrders.filter((o) => o.userId === user?.id);
 
   // Refresh user data when screen is focused
   useFocusEffect(
@@ -243,7 +243,9 @@ const ProfileScreen = () => {
     );
   }
 
-  const recentOrders = userOrders.slice(0, 3);
+  const recentOrders = user?.role === 'admin' 
+    ? allOrders.slice(0, 3) 
+    : userOrders.slice(0, 3);
 
   return (
     <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
@@ -466,7 +468,7 @@ const ProfileScreen = () => {
           <View style={[styles.card, isDark && styles.cardDark]}>
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, isDark && styles.textWhite]}>
-                Recent Orders
+                {user?.role === 'admin' ? 'Store Orders' : 'Recent Orders'}
               </Text>
               <TouchableOpacity onPress={() => handleNavigate("Orders")}>
                 <Text style={styles.viewAll}>View All</Text>

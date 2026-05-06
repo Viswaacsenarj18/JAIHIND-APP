@@ -2,12 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Package, Trash2 } from "lucide-react-native";
+import { Package, Trash2, Download } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import PageHeader from "../components/PageHeader";
-import { useOrders } from "../context/OrderContext";
+import { useOrders, Order } from "../context/OrderContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { generateBillPDF } from "../utils/billGenerator";
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   pending: { bg: "rgba(245,158,11,0.12)", text: "#D97706" },
@@ -31,7 +32,14 @@ const OrdersScreen = () => {
 
   const handleCancelOrder = (orderId: string) => { updateOrderStatus(orderId, "cancelled"); };
   const handleDeleteOrder = (orderId: string) => { deleteOrder(orderId); };
-  const myOrders = user ? orders.filter((o) => o.userId === user.id) : [];
+  const handleDownloadBill = async (order: Order) => {
+    try {
+      await generateBillPDF(order);
+    } catch (error) {
+      console.error("Bill download error:", error);
+    }
+  };
+  const myOrders = user?.role === 'admin' ? orders : orders.filter((o) => o.userId === user?.id);
 
   if (loading) {
     return (
@@ -81,19 +89,38 @@ const OrdersScreen = () => {
                 </View>
                 <View style={{ alignItems: "flex-end", gap: 6 }}>
                   <Text style={[styles.total, { color: textPrimary }]}>Rs.{order.total.toLocaleString("en-IN")}</Text>
-                  {order.status === "pending" && (
-                    <TouchableOpacity onPress={() => handleCancelOrder(order.id)}
-                      style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2" }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Cancel Order</Text>
+                  
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity 
+                      onPress={() => handleDownloadBill(order)}
+                      style={{ 
+                        paddingHorizontal: 10, 
+                        paddingVertical: 4, 
+                        borderRadius: 6, 
+                        backgroundColor: isDark ? "rgba(59,130,246,0.2)" : "#DBEAFE",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4
+                      }}
+                    >
+                      <Download size={12} color="#2563EB" />
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#2563EB" }}>Bill</Text>
                     </TouchableOpacity>
-                  )}
-                  {order.status === "cancelled" && (
-                    <TouchableOpacity onPress={() => handleDeleteOrder(order.id)}
-                      style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2", flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Trash2 size={12} color="#DC2626" />
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Delete</Text>
-                    </TouchableOpacity>
-                  )}
+
+                    {order.status === "pending" && (
+                      <TouchableOpacity onPress={() => handleCancelOrder(order.id)}
+                        style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2" }}>
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Cancel</Text>
+                      </TouchableOpacity>
+                    )}
+                    {order.status === "cancelled" && (
+                      <TouchableOpacity onPress={() => handleDeleteOrder(order.id)}
+                        style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2", flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Trash2 size={12} color="#DC2626" />
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Delete</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
             </View>

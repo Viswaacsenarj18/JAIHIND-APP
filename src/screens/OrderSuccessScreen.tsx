@@ -4,9 +4,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { CheckCircle } from "lucide-react-native";
+import { CheckCircle, Download } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
+import { useOrders } from "../context/OrderContext";
+import { generateBillPDF } from "../utils/billGenerator";
 
 type RootStackParamList = {
   OrderSuccess: { orderId: string };
@@ -18,8 +20,20 @@ const OrderSuccessScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "OrderSuccess">>();
   const orderId = route.params?.orderId;
+  const { orders } = useOrders();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  const order = orders.find(o => o.id === orderId);
+
+  const handleDownloadBill = async () => {
+    if (!order) return;
+    try {
+      await generateBillPDF(order);
+    } catch (error) {
+      console.error("Bill download error:", error);
+    }
+  };
 
   const bg = isDark ? "#111827" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
@@ -37,9 +51,17 @@ const OrderSuccessScreen = () => {
         <Text style={[styles.sub, { color: textSecondary }]}>Your order has been placed successfully</Text>
         <Text style={[styles.orderId, { color: textSecondary }]}>Order ID: <Text style={[styles.orderIdVal, { color: isDark ? "#E11D48" : "#333333" }]}>{orderId}</Text></Text>
         <View style={styles.btnGroup}>
+          {order && (
+            <TouchableOpacity onPress={handleDownloadBill} activeOpacity={0.8}>
+              <View style={[styles.billBtn, { borderColor: isDark ? "#E11D48" : "#E11D48" }]}>
+                <Download size={18} color="#E11D48" />
+                <Text style={styles.billBtnText}>Download Bill</Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => navigation.navigate("Orders")} activeOpacity={0.88}>
             <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.btn}>
-              <Text style={styles.btnText}>View Orders</Text>
+              <Text style={styles.btnText}>View All Orders</Text>
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate("Tabs")} style={[styles.outlineBtn, { borderColor }]}>
@@ -66,4 +88,6 @@ const styles = StyleSheet.create({
   btnText:       { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
   outlineBtn:    { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2 },
   outlineBtnText:{ fontSize: 14, fontWeight: "700" },
+  billBtn:       { height: 52, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, marginBottom: 4 },
+  billBtnText:   { fontSize: 15, fontWeight: "700", color: "#E11D48" },
 });

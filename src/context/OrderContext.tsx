@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   deleteDoc,
   where,
+  collectionGroup,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { CartItem } from "./CartContext";
@@ -60,8 +61,8 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       // If admin, show all orders. If user, show only their orders.
       const ordersRef = collection(db, "orders");
       const q = user.role === 'admin' 
-        ? query(ordersRef, orderBy("createdAt", "desc"))
-        : query(ordersRef, where("userId", "==", user.id), orderBy("createdAt", "desc"));
+        ? query(ordersRef) 
+        : query(ordersRef, where("userId", "==", user.id));
 
       const unsub = onSnapshot(q,
         (snapshot) => {
@@ -79,7 +80,15 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
             name: docItem.data().name || "",
             createdAt: docItem.data().createdAt,
           }));
-          setOrders(orderList);
+
+          // 🔥 SORT IN JAVASCRIPT to avoid needing composite indexes in Firestore
+          const sortedOrders = orderList.sort((a, b) => {
+            const timeA = a.createdAt?.seconds || 0;
+            const timeB = b.createdAt?.seconds || 0;
+            return timeB - timeA;
+          });
+
+          setOrders(sortedOrders);
           setLoading(false);
           clearTimeout(timeoutId);
         },
@@ -142,15 +151,19 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         createdAt: serverTimestamp(),
       });
 
-      // Create notification for admin
-      await addDoc(collection(db, "notifications"), {
-        type: "admin",
-        title: "New Order Received",
-        message: `New order #${orderRef.id.slice(-6)} from ${name}`,
-        orderId: orderRef.id,
-        amount: total,
-        createdAt: serverTimestamp(),
-      });
+      // Create notification for admin - wrap in try/catch so it doesn't block the order if permissions fail
+      try {
+        await addDoc(collection(db, "notifications"), {
+          type: "admin",
+          title: "New Order Received",
+          message: `New order #${orderRef.id.slice(-6)} from ${name}`,
+          orderId: orderRef.id,
+          amount: total,
+          createdAt: serverTimestamp(),
+        });
+      } catch (notifErr) {
+        console.warn("⚠️ Could not create admin notification (likely permissions):", notifErr);
+      }
 
       return orderRef.id;
     } catch (error: any) {

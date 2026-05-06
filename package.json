@@ -17,6 +17,8 @@
     "expo-blur": "^55.0.14",
     "expo-image-picker": "~55.0.19",
     "expo-linear-gradient": "~55.0.9",
+    "expo-print": "~55.0.14",
+    "expo-sharing": "~55.0.18",
     "expo-status-bar": "~55.0.4",
     "firebase": "^12.12.1",
     "lucide-react-native": "^0.577.0",

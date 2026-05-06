@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreditCard, Banknote, Smartphone, Truck, Edit2, Trash2, Plus, Minus, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import PageHeader from "../components/PageHeader";
+import SuccessModal from "../components/SuccessModal";
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrderContext";
 import { useAuth } from "../context/AuthContext";
@@ -52,6 +53,7 @@ const CheckoutScreen = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editQuantity, setEditQuantity] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const deliveryCharge = totalPrice > 999 ? 0 : 49;
   const grandTotal = totalPrice + deliveryCharge;
@@ -84,7 +86,11 @@ const CheckoutScreen = () => {
         user.id
       );
       clearCart();
-      navigation.navigate("OrderSuccess", { orderId });
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigation.navigate("OrderSuccess", { orderId });
+      }, 2000);
     } catch (err: any) {
       setError(err.message || "Failed to place order");
     } finally {
@@ -96,6 +102,13 @@ const CheckoutScreen = () => {
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
       <PageHeader title="Checkout" />
+      
+      <SuccessModal 
+        visible={showSuccess} 
+        title="Order Placed!" 
+        message="Your order has been received. Redirecting..." 
+      />
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={[styles.card, { backgroundColor: cardBg }]}>
