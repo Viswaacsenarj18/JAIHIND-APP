@@ -115,71 +115,85 @@ const AdminOrdersPage = () => {
     }
   };
 
-  // DELETE ORDER — Save to history first, then remove
+  // DELETE ORDER — Ask for confirmation first
   const handleDeleteOrder = (order: AdminOrder) => {
-    const title = "Delete Order";
-    const message = `Are you sure you want to delete order #${order.id.slice(-6)} by ${order.name}?\n\nThis order will be saved to history before deletion.`;
-    const onConfirm = () => performDeleteOrder(order);
+    if (!order || !order.id) return;
+
+    const title = "Confirm Deletion";
+    const message = `Are you sure you want to permanently delete order #${order.id.slice(-6)}?\n\nThis action cannot be undone.`;
 
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm) {
-        if (window.confirm(`${title}\n\n${message}`)) {
-          onConfirm();
-        }
+      const confirmed = window.confirm(`${title}\n\n${message}`);
+      if (confirmed) {
+        performDeleteOrder(order);
       }
     } else {
-      Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: onConfirm },
-      ]);
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive", 
+            onPress: () => performDeleteOrder(order) 
+          },
+        ],
+        { cancelable: true }
+      );
     }
   };
 
   const performDeleteOrder = async (order: AdminOrder) => {
     try {
       setDeletingId(order.id);
-      console.log(`🗑️ Deleting order: ${order.id}`);
+      console.log(`🗑️ Initiating deletion for order: ${order.id}`);
 
-      // 1. Log full order data to history/activities BEFORE deleting
-      await logActivity({
-        type: "order",
-        title: `Order #${order.id.slice(-6)} deleted`,
-        subtitle: `Customer: ${order.name} | ₹${order.total?.toLocaleString("en-IN") || 0} | ${order.items.length} item(s) | Status: ${order.status} | Date: ${order.date}`,
-        details: {
-          orderId: order.id,
-          customerName: order.name,
-          phone: order.phone,
-          address: order.address,
-          items: order.items,
-          total: order.total,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          orderDate: order.date,
-          deletedAt: new Date().toISOString(),
-        },
-      });
-
-      // 2. Also store in dedicated 'order_history' collection for full backup
-      await addDoc(collection(db, "order_history"), {
-        ...order,
-        deletedAt: serverTimestamp(),
-        originalOrderId: order.id,
-      });
-
-      // 3. Now delete from orders
-      await deleteDoc(doc(db, "orders", order.id));
-
-      console.log(`✅ Order ${order.id} deleted and saved to history`);
-
-      setSelected(null);
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined') window.alert("Order deleted and saved to history");
-      } else {
-        Alert.alert("Success", "Order deleted and saved to history");
+      // 1. Log to activity history (non-blocking)
+      try {
+        await logActivity({
+          type: "order",
+          title: `Order Deleted: #${order.id.slice(-6)}`,
+          subtitle: `Customer: ${order.name} | Total: ₹${order.total}`,
+          details: { ...order, deletedAt: new Date().toISOString() }
+        });
+      } catch (e) {
+        console.warn("⚠️ Failed to log deletion activity:", e);
       }
+
+      // 2. Backup to order_history (non-blocking backup)
+      try {
+        await addDoc(collection(db, "order_history"), {
+          ...order,
+          deletedAt: serverTimestamp(),
+          originalId: order.id,
+          archivedBy: "admin"
+        });
+      } catch (e) {
+        console.warn("⚠️ Failed to backup order to history:", e);
+      }
+
+      // 3. THE ACTUAL DELETION from the main collection
+      const orderRef = doc(db, "orders", order.id);
+      await deleteDoc(orderRef);
+
+      console.log(`✅ Order ${order.id} successfully deleted from database`);
+
+      // Success feedback
+      if (Platform.OS === 'web') {
+        window.alert(`Order #${order.id.slice(-6)} deleted successfully.`);
+      } else {
+        Alert.alert("Deleted", `Order #${order.id.slice(-6)} has been removed.`);
+      }
+      
+      setSelected(null); // Close modal if open
     } catch (error: any) {
-      console.error("❌ Delete error:", error);
-      notifyError("Delete failed", error.message || String(error));
+      console.error("❌ Critical Delete Error:", error);
+      const errorMsg = error.code === 'permission-denied' 
+        ? "You don't have permission to delete orders. Please check your admin status."
+        : error.message || "An unexpected error occurred while deleting.";
+      
+      notifyError("Deletion Failed", errorMsg);
     } finally {
       setDeletingId(null);
     }
