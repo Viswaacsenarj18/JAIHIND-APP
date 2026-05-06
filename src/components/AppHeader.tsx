@@ -62,7 +62,7 @@ const AppHeader = () => {
           <Search size={18} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Cart")} activeOpacity={0.75}>
-          <ShoppingCart size={18} color={iconColor} />
+          <ShoppingCart size={18} color="#E11D48" />
           {totalItems > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{totalItems > 99 ? "99+" : totalItems}</Text>

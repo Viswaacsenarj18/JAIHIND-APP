@@ -376,7 +376,7 @@ const mockNotifs = [
 const notifIcon: Record<string, React.ElementType> = { order: Package, cart: ShoppingCart, promo: Tag, info: Info };
 const notifColor: Record<string, { bg: string; icon: string }> = {
   order: { bg: "rgba(225,29,72,0.10)", icon: "#E11D48" },
-  cart:  { bg: "rgba(22,163,74,0.10)", icon: "#16A34A" },
+  cart:  { bg: "rgba(225,29,72,0.10)", icon: "#E11D48" },
   promo: { bg: "rgba(245,158,11,0.12)",icon: "#D97706" },
   info:  { bg: "#F3F4F6",              icon: "#6B7280" },
 };

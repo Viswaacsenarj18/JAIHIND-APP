@@ -32,7 +32,7 @@ const CartScreen = () => {
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
         <PageHeader title="Cart" showBack={true} />
         <View style={styles.empty}>
-          <View style={[styles.emptyIcon, { backgroundColor: iconBg }]}><ShoppingBag size={32} color="#9CA3AF" /></View>
+          <View style={[styles.emptyIcon, { backgroundColor: "rgba(225,29,72,0.10)" }]}><ShoppingBag size={32} color="#E11D48" /></View>
           <Text style={[styles.emptyTitle, { color: textPrimary }]}>Your cart is empty</Text>
           <Text style={[styles.emptySub, { color: textSecondary }]}>Add some products to get started</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Home")} activeOpacity={0.88}>
