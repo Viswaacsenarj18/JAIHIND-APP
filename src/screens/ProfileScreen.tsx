@@ -443,7 +443,7 @@ const ProfileScreen = () => {
               Icon: ShoppingCart,
               label: "Cart",
               value: totalItems,
-              color: "#333333",
+              color: "#E11D48",
               screen: "Cart",
             },
           ].map(({ Icon, label, value, color, screen }) => (
