@@ -186,8 +186,17 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
           const productSnap = await getDoc(productRef);
           if (productSnap.exists()) {
             const data = productSnap.data();
-            // Fallback to 100 if stock is undefined so the subtraction works correctly.
-            const currentStock = typeof data.stock === 'number' ? data.stock : 100;
+            
+            // Resilient stock parsing (number, string, or fallback to 20 if undefined)
+            let currentStock = 20;
+            if (typeof data.stock === 'number') {
+              currentStock = data.stock;
+            } else if (typeof data.stock === 'string') {
+              currentStock = parseInt(data.stock, 10) || 0;
+            } else if (data.stock !== undefined && data.stock !== null) {
+              currentStock = Number(data.stock) || 0;
+            }
+            
             const newStock = Math.max(0, currentStock - item.quantity);
             const inStock = newStock > 0;
             
