@@ -8,6 +8,7 @@ import { db } from "../../firebaseConfig";
 import ModalForm from "../../components/admin/ModalForm";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { logActivity } from "../../utils/activityLogger";
 
 interface FirestoreUser {
   id: string;
@@ -80,6 +81,17 @@ const AdminUsersPage = () => {
       try {
         setDeletingId(id);
         await deleteDoc(doc(db, "users", id));
+        // Log the delete action
+        try {
+          await logActivity({
+            type: "user",
+            title: "User Deleted",
+            subtitle: `User "${name}" (${email}) was deleted by Admin`,
+            details: { userId: id, name, email }
+          });
+        } catch (logErr) {
+          console.warn("⚠️ Could not log user deletion:", logErr);
+        }
         if (Platform.OS === 'web') {
           alert(`User "${name}" deleted successfully`);
         } else {
