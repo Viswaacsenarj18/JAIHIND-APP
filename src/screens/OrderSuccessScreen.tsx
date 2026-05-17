@@ -8,7 +8,7 @@ import { CheckCircle, Download } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 import { useOrders } from "../context/OrderContext";
-import { generateBillPDF } from "../utils/billGenerator";
+import { downloadBillPDF } from "../utils/billGenerator";
 
 type RootStackParamList = {
   OrderSuccess: { orderId: string };
@@ -29,7 +29,7 @@ const OrderSuccessScreen = () => {
   const handleDownloadBill = async () => {
     if (!order) return;
     try {
-      await generateBillPDF(order);
+      await downloadBillPDF(order);
     } catch (error) {
       console.error("Bill download error:", error);
     }

@@ -25,7 +25,7 @@ const numberToWords = (num: number): string => {
   return str + " Rupees only";
 };
 
-export const generateBillPDF = async (order: Order) => {
+const generateBillHTML = (order: Order): string => {
   const invoiceDate = order.date || new Date().toLocaleDateString("en-IN");
   const invoiceNo = `${order.id.slice(-6).toUpperCase()}`;
   const totalQty = order.items.reduce((s, i) => s + (i.quantity || 0), 0);
@@ -475,12 +475,30 @@ export const generateBillPDF = async (order: Order) => {
 </html>
   `;
 
+  return html;
+};
+
+// 1. Direct local download via Native OS PDF printer dialogue
+export const downloadBillPDF = async (order: Order) => {
   try {
+    const html = generateBillHTML(order);
+    await Print.printAsync({ html });
+    console.log('PDF print/download dialogue opened successfully');
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    throw error;
+  }
+};
+
+// 2. Share PDF document to external apps (WhatsApp, Email, etc.)
+export const shareBillPDF = async (order: Order) => {
+  try {
+    const html = generateBillHTML(order);
     const { uri } = await Print.printToFileAsync({ html });
-    console.log('PDF successfully generated at:', uri);
+    console.log('PDF generated for sharing at:', uri);
     await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('Error sharing PDF:', error);
     throw error;
   }
 };

@@ -16,7 +16,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { ArrowLeft, Share2, Download } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { Order } from "../context/OrderContext";
-import { generateBillPDF } from "../utils/billGenerator";
+import { downloadBillPDF, shareBillPDF } from "../utils/billGenerator";
 import { LOGO_BASE64, SIGNATURE_BASE64 } from "../assets/base64Assets";
 
 // --- Number to Words Converter (Indian Numbering System) ---
@@ -99,7 +99,7 @@ const InvoiceScreen = () => {
   const handleDownload = async () => {
     try {
       setDownloading(true);
-      await generateBillPDF(order);
+      await downloadBillPDF(order);
     } catch (err) {
       Alert.alert("Download Failed", "Could not download the invoice PDF.");
     } finally {
@@ -109,36 +109,9 @@ const InvoiceScreen = () => {
 
   const handleShare = async () => {
     try {
-      const itemsText = order.items
-        .map(
-          (i, idx) =>
-            `${idx + 1}. ${getItemName(i)} x${i.quantity} = ₹${(getItemPrice(i) * i.quantity).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
-        )
-        .join("\n");
-
-      const shareText = `
-🧾 JAIHIND SPORTS — Tax Invoice
-━━━━━━━━━━━━━━━━━━━━━━━━
-Invoice Details:
-No   : ${invoiceNo}
-Date : ${invoiceDate}
-━━━━━━━━━━━━━━━━━━━━━━━━
-Bill To:
-${order.name.toUpperCase()}
-Contact No: ${order.phone}
-━━━━━━━━━━━━━━━━━━━━━━━━
-ITEMS:
-${itemsText}
-━━━━━━━━━━━━━━━━━━━━━━━━
-Total Amount: ₹${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-Amount in Words: ${numberToWords(grandTotal)}
-━━━━━━━━━━━━━━━━━━━━━━━━
-Thank you for doing business with us! 🏆
-      `.trim();
-
-      await Share.share({ message: shareText, title: `Invoice #${invoiceNo}` });
+      await shareBillPDF(order);
     } catch (err) {
-      Alert.alert("Share Failed", "Could not share the invoice.");
+      Alert.alert("Share Failed", "Could not share the invoice PDF.");
     }
   };
 
