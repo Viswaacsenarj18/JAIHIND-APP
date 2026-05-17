@@ -23,7 +23,7 @@ const ProductListScreen = () => {
   const { products, categories, loading } = useProducts();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const bg = isDark ? "#111827" : "#F8F8F8";
+  const bg = isDark ? "#000000" : "#F8F8F8";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
 

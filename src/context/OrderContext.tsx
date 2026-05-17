@@ -17,6 +17,7 @@ import {
 import { db } from "../firebaseConfig";
 import { CartItem } from "./CartContext";
 import { useAuth } from "./AuthContext";
+import { logActivity } from "../utils/activityLogger";
 
 export interface Order {
   id: string;
@@ -149,8 +150,19 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         address,
         phone,
         name,
-        createdAt: serverTimestamp(),
       });
+
+      // Log the activity to the Admin History collection
+      try {
+        await logActivity({
+          type: "order",
+          title: "New Order Placed",
+          subtitle: `Order #${orderRef.id.slice(-6).toUpperCase()} placed by ${name} (Total: ₹${total})`,
+          details: { orderId: orderRef.id, total, customerName: name }
+        });
+      } catch (logErr) {
+        console.warn("⚠️ Could not log order placement activity:", logErr);
+      }
 
       // Create notification for admin
       try {

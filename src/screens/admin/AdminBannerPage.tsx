@@ -14,12 +14,12 @@ import { useTheme } from "../../context/ThemeContext";
 const AdminBannerPage = () => {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F8F8F8";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#E5E5E5";
-  const inputBg = isDark ? "#222222" : "#FFFFFF";
+  const inputBg = isDark ? "#1E1E1E" : "#FFFFFF";
 
   const { banners, addBanner, updateBanner, deleteBanner, loading } = useBanners();
   const [title, setTitle] = useState("");
@@ -162,7 +162,7 @@ const AdminBannerPage = () => {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={[styles.card, { backgroundColor: cardBg }]}>
-              <Image source={{ uri: item.imageUrl }} style={[styles.image, { backgroundColor: isDark ? "#111827" : "#F3F4F6" }]} resizeMode="contain" />
+              <Image source={{ uri: item.imageUrl }} style={[styles.image, { backgroundColor: isDark ? "#111111" : "#F3F4F6" }]} resizeMode="contain" />
               <View style={styles.cardInfo}>
                 <Text style={[styles.bannerTitle, { color: textColor }]} numberOfLines={2}>{item.title || 'Banner'}</Text>
                 <View style={styles.actionsRow}>
@@ -205,7 +205,7 @@ const AdminBannerPage = () => {
               keyboardType="url" 
             />
             <View style={styles.urlModalButtons}>
-              <TouchableOpacity style={[styles.urlModalButton, styles.cancelButton, isDark && { backgroundColor: "#374151" }]} onPress={() => setShowUrlModal(false)}>
+              <TouchableOpacity style={[styles.urlModalButton, styles.cancelButton, isDark && { backgroundColor: "#1E1E1E" }]} onPress={() => setShowUrlModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: subTextColor }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.urlModalButton, styles.addButton]} onPress={addImageByUrl}>
@@ -243,7 +243,7 @@ const AdminBannerPage = () => {
               keyboardType="url" 
             />
             <View style={styles.urlModalButtons}>
-              <TouchableOpacity style={[styles.urlModalButton, styles.cancelButton, isDark && { backgroundColor: "#374151" }]} onPress={() => setShowEditModal(false)}>
+              <TouchableOpacity style={[styles.urlModalButton, styles.cancelButton, isDark && { backgroundColor: "#1E1E1E" }]} onPress={() => setShowEditModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: subTextColor }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.urlModalButton, styles.addButton]} onPress={saveEdit}>

@@ -56,8 +56,8 @@ const NotificationsScreen = () => {
   const isAdmin = isAdminAuthenticated || user?.role === 'admin';
   const isDark = isAdmin ? adminTheme === "dark" : theme === "dark";
   
-  const bg = isDark ? "#111111" : "#F8F8F8";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const titleColor = isDark ? "#FFFFFF" : "#111111";
   const msgColor = isDark ? "#9CA3AF" : "#6B7280";
 

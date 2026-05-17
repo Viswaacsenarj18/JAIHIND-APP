@@ -2,7 +2,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 export const logActivity = async (activity: {
-  type: "user" | "order" | "product" | "category" | "notification";
+  type: "user" | "order" | "product" | "category" | "notification" | "review";
   title: string;
   subtitle: string;
   adminName?: string;

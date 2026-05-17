@@ -102,7 +102,7 @@ const AdminPanel = ({ navigation }: any) => {
   const { adminTheme } = useTheme();
 
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F9FAFB";
+  const bg = isDark ? "#000000" : "#F9FAFB";
 
   const handleLogout = async () => {
     adminLogout();
@@ -166,7 +166,7 @@ function UserTabs() {
             borderTopColor: isDark ? "#222222" : "#E5E7EB",
             paddingBottom: Platform.OS === "android" ? 8 : 0,
             height: Platform.OS === "android" ? 56 : 60,
-            backgroundColor: isDark ? "#111111" : "#FFFFFF",
+            backgroundColor: isDark ? "#000000" : "#FFFFFF",
           },
           tabBarLabelStyle: {
             fontSize: 11,
@@ -233,7 +233,7 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: isDark ? "#111827" : "#FFFFFF" }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: isDark ? "#000000" : "#FFFFFF" }}>
         <ActivityIndicator size="large" color="#E11D48" />
       </View>
     );
@@ -243,7 +243,7 @@ const AppContent = () => {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-    background: isDark ? "#111111" : "#F8F8F8",
+    background: isDark ? "#000000" : "#F8F8F8",
     card: isDark ? "#111111" : "#FFFFFF",
       text: isDark ? "#FFFFFF" : "#111111",
     },

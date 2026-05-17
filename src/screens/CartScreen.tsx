@@ -19,12 +19,12 @@ const CartScreen = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const bg = isDark ? "#111827" : "#F8F8F8";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E5E5";
-  const iconBg = isDark ? "#374151" : "#F3F4F6";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
+  const iconBg = isDark ? "#1E1E1E" : "#F3F4F6";
 
   if (items.length === 0) {
     return (

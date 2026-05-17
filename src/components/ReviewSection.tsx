@@ -67,13 +67,13 @@ const ReviewSection = ({ productId }: { productId: string }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
-  const inputBg = isDark ? "#374151" : "#F3F4F6";
-  const inputBorder = isDark ? "#4B5563" : "#E5E5E5";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
+  const inputBg = isDark ? "#1E1E1E" : "#F3F4F6";
+  const inputBorder = isDark ? "#222222" : "#E5E5E5";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const summaryBg = isDark ? "#1F2937" : "#F3F4F6";
-  const iconBg = isDark ? "#374151" : "#F3F4F6";
+  const summaryBg = isDark ? "#111111" : "#F3F4F6";
+  const iconBg = isDark ? "#1E1E1E" : "#F3F4F6";
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
 

@@ -34,13 +34,13 @@ const CheckoutScreen = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const bg = isDark ? "#111827" : "#F8F8F8";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const inputBg = isDark ? "#374151" : "#F9FAFB";
-  const inputBorder = isDark ? "#4B5563" : "#E5E7EB";
-  const borderColor = isDark ? "#374151" : "#F0F0F0";
+  const inputBg = isDark ? "#1E1E1E" : "#F9FAFB";
+  const inputBorder = isDark ? "#222222" : "#E5E7EB";
+  const borderColor = isDark ? "#222222" : "#F0F0F0";
 
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -175,7 +175,7 @@ const CheckoutScreen = () => {
           {paymentMethods.map((pm) => {
             const active = paymentMethod === pm.id;
             return (
-              <TouchableOpacity key={pm.id} style={[styles.paymentBtn, { backgroundColor: isDark ? "#374151" : "#F9FAFB", borderColor: active ? "#E11D48" : (isDark ? "#4B5563" : "#E5E7EB") }, active && styles.paymentBtnActive]} onPress={() => setPaymentMethod(pm.id)} activeOpacity={0.8}>
+              <TouchableOpacity key={pm.id} style={[styles.paymentBtn, { backgroundColor: isDark ? "#1E1E1E" : "#F9FAFB", borderColor: active ? "#E11D48" : (isDark ? "#222222" : "#E5E7EB") }, active && styles.paymentBtnActive]} onPress={() => setPaymentMethod(pm.id)} activeOpacity={0.8}>
                 <View style={[styles.paymentIcon, active && styles.paymentIconActive]}><pm.Icon size={18} color={active ? "#E11D48" : "#9CA3AF"} /></View>
                 <View><Text style={[styles.paymentLabel, { color: textPrimary }]}>{pm.label}</Text><Text style={[styles.paymentDesc, { color: textSecondary }]}>{pm.desc}</Text></View>
               </TouchableOpacity>
@@ -193,29 +193,29 @@ const CheckoutScreen = () => {
       </ScrollView>
 
       <Modal visible={editModalVisible} transparent animationType="slide" onRequestClose={handleCancelEdit}>
-        <SafeAreaView style={styles.modalSafe}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={handleCancelEdit} style={styles.closeBtn}><X size={24} color="#111111" /></TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Item</Text>
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: bg }]}>
+          <View style={[styles.modalHeader, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
+            <TouchableOpacity onPress={handleCancelEdit} style={styles.closeBtn}><X size={24} color={textPrimary} /></TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: textPrimary }]}>Edit Item</Text>
             <View style={{ width: 32 }} />
           </View>
           <ScrollView style={styles.modalContent} contentContainerStyle={{ gap: 20 }}>
             {editingItem && (
               <>
-                <View style={styles.modalCard}>
-                  <Text style={styles.modalCardTitle}>Product</Text>
-                  <Text style={styles.productName}>{editingItem.product.name}</Text>
+                <View style={[styles.modalCard, { backgroundColor: cardBg }]}>
+                  <Text style={[styles.modalCardTitle, { color: textSecondary }]}>Product</Text>
+                  <Text style={[styles.productName, { color: textPrimary }]}>{editingItem.product.name}</Text>
                   <Text style={styles.productPrice}>Rs.{editingItem.product.price.toLocaleString("en-IN")} per unit</Text>
                 </View>
-                <View style={styles.modalCard}>
-                  <Text style={styles.modalCardTitle}>Quantity</Text>
+                <View style={[styles.modalCard, { backgroundColor: cardBg }]}>
+                  <Text style={[styles.modalCardTitle, { color: textSecondary }]}>Quantity</Text>
                   <View style={styles.quantityContainer}>
                     <TouchableOpacity style={styles.quantityBtn} onPress={decreaseQuantity} activeOpacity={0.6}><Minus size={20} color="#E11D48" /></TouchableOpacity>
-                    <TextInput value={editQuantity} onChangeText={setEditQuantity} keyboardType="numeric" style={styles.quantityInput} textAlign="center" />
+                    <TextInput value={editQuantity} onChangeText={setEditQuantity} keyboardType="numeric" style={[styles.quantityInput, { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary }]} textAlign="center" />
                     <TouchableOpacity style={styles.quantityBtn} onPress={increaseQuantity} activeOpacity={0.6}><Plus size={20} color="#E11D48" /></TouchableOpacity>
                   </View>
-                  <View style={styles.priceBreakdown}><Text style={styles.breakdownLabel}>Unit Price</Text><Text style={styles.breakdownValue}>Rs.{editingItem.product.price.toLocaleString("en-IN")}</Text></View>
-                  <View style={styles.priceBreakdown}><Text style={styles.breakdownLabel}>Subtotal</Text><Text style={styles.breakdownValue}>Rs.{(editingItem.product.price * parseInt(editQuantity || "1", 10)).toLocaleString("en-IN")}</Text></View>
+                  <View style={[styles.priceBreakdown, { borderTopColor: borderColor }]}><Text style={[styles.breakdownLabel, { color: textSecondary }]}>Unit Price</Text><Text style={[styles.breakdownValue, { color: textPrimary }]}>Rs.{editingItem.product.price.toLocaleString("en-IN")}</Text></View>
+                  <View style={[styles.priceBreakdown, { borderTopColor: borderColor }]}><Text style={[styles.breakdownLabel, { color: textSecondary }]}>Subtotal</Text><Text style={[styles.breakdownValue, { color: textPrimary }]}>Rs.{(editingItem.product.price * parseInt(editQuantity || "1", 10)).toLocaleString("en-IN")}</Text></View>
                 </View>
                 {!!error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
                 <TouchableOpacity onPress={handleSaveEdit} activeOpacity={0.88}>

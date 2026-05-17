@@ -168,7 +168,7 @@ const SettingsScreen = () => {
 
   return (
     <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#111827" : "#F8F8F8"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#000000" : "#F8F8F8"} />
       <PageHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
@@ -249,9 +249,9 @@ const SettingsScreen = () => {
 
         {/* ── Notifications ── */}
         <View style={[styles.card, isDark && styles.cardDark]}>
-          <View style={[styles.cardHeader, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? "#374151" : "#E5E5E5" }]}>
+          <View style={[styles.cardHeader, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? "#222222" : "#E5E5E5" }]}>
             <View style={styles.cardLeft}>
-              <View style={[styles.iconBox, { backgroundColor: isDark ? "#374151" : "#F3F4F6" }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? "#1E1E1E" : "#F3F4F6" }]}>
                 <Bell size={18} color={isDark ? "#FFFFFF" : "#333333"} />
               </View>
               <View>
@@ -268,7 +268,7 @@ const SettingsScreen = () => {
             <View key={label} style={[styles.toggleRow, idx < arr.length - 1 && (isDark ? styles.borderBottomDark : styles.borderBottom)]}>
               <Text style={[styles.toggleLabel, isDark && styles.textWhite]}>{label}</Text>
               <Switch value={value} onValueChange={setter}
-                trackColor={{ false: isDark ? "#374151" : "#E5E5E5", true: "#E11D48" }}
+                trackColor={{ false: isDark ? "#222222" : "#E5E5E5", true: "#E11D48" }}
                 thumbColor="#FFFFFF" ios_backgroundColor="#E5E5E5" />
             </View>
           ))}
@@ -278,7 +278,7 @@ const SettingsScreen = () => {
         <View style={[styles.card, isDark && styles.cardDark]}>
           <View style={styles.toggleRow}>
             <View style={styles.cardLeft}>
-              <View style={[styles.iconBox, { backgroundColor: isDark ? "#1F2937" : "#F3F4F6" }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? "#1E1E1E" : "#F3F4F6" }]}>
                 {isDark ? <Moon size={18} color="#E11D48" /> : <Sun size={18} color="#D97706" />}
               </View>
               <View>
@@ -308,7 +308,7 @@ const SettingsScreen = () => {
                 <Text style={[styles.toggleLabel, isDark && styles.textWhite]}>{label}</Text>
               </View>
               <Switch value={value} onValueChange={setter}
-                trackColor={{ false: isDark ? "#374151" : "#E5E5E5", true: "#E11D48" }}
+                trackColor={{ false: isDark ? "#222222" : "#E5E5E5", true: "#E11D48" }}
                 thumbColor="#FFFFFF" ios_backgroundColor="#E5E5E5" />
             </View>
           ))}
@@ -342,7 +342,7 @@ export default SettingsScreen;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F8F8F8" },
-  safeDark: { backgroundColor: "#111827" },
+  safeDark: { backgroundColor: "#000000" },
   content: {
     padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 24 : 16,
     gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 18 : 14,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
   },
-  cardDark: { backgroundColor: "#1F2937", shadowOpacity: 0.2 },
+  cardDark: { backgroundColor: "#111111", shadowOpacity: 0.2 },
   cardHeader: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     paddingTop: 4, gap: 12,
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#E5E7EB",
   },
-  cardBodyDark: { borderTopColor: "#374151" },
+  cardBodyDark: { borderTopColor: "#222222" },
   avatarWrapper: { alignItems: "center", paddingVertical: IS_SMALL_SCREEN ? 6 : 8 },
   avatar: {
     width: IS_SMALL_SCREEN ? 64 : IS_TABLET ? 96 : 80,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6", borderRadius: 12, borderWidth: 1, borderColor: "#E5E5E5",
     paddingHorizontal: 14, fontSize: 14, color: "#111111",
   },
-  inputDark: { backgroundColor: "#374151", borderColor: "#4B5563", color: "#FFFFFF" },
+  inputDark: { backgroundColor: "#1E1E1E", borderColor: "#333333", color: "#FFFFFF" },
   textarea: { height: IS_SMALL_SCREEN ? 72 : 80, paddingTop: 12, paddingBottom: 12 },
   saveBtn: {
     height: IS_SMALL_SCREEN ? 44 : IS_TABLET ? 52 : 48,
@@ -417,8 +417,8 @@ const styles = StyleSheet.create({
   },
   toggleLabel: { fontSize: IS_SMALL_SCREEN ? 13 : 14, color: "#111111" },
   borderBottom: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E5E5E5" },
-  borderBottomDark: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#374151" },
+  borderBottomDark: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#222222" },
   borderTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#E5E5E5" },
-  borderTopDark: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#374151" },
+  borderTopDark: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#222222" },
   version: { fontSize: IS_SMALL_SCREEN ? 9 : 10, color: "#9CA3AF" },
 });

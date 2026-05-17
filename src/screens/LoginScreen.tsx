@@ -29,7 +29,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 const LoginScreen = () => {
   const navigation = useNavigation<NavProp>();
   const { login, register, user, loading: userAuthLoading } = useAuth();
-  const { adminLogin, isAdminAuthenticated, loading: adminAuthLoading } = useAdminAuth();
+  const { adminLogin, isAdminAuthenticated } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -83,7 +83,7 @@ const LoginScreen = () => {
           if (firebaseErr.code === "auth/user-not-found" || firebaseErr.code === "auth/invalid-credential") {
             console.log("ℹ️ Admin not found or invalid credential, auto-registering...");
             try {
-              await register("Admin", ADMIN_EMAIL, ADMIN_PASSWORD);
+              await register("Admin", ADMIN_EMAIL, "", ADMIN_PASSWORD);
               // Force update role to admin after successful registration
               try {
                 const { auth, db } = require("../firebaseConfig");

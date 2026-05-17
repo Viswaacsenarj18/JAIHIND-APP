@@ -9,12 +9,15 @@ import {
   Alert,
   StatusBar,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ArrowLeft, Share2 } from "lucide-react-native";
+import { ArrowLeft, Share2, Download } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { Order } from "../context/OrderContext";
+import { generateBillPDF } from "../utils/billGenerator";
+import { LOGO_BASE64, SIGNATURE_BASE64 } from "../assets/base64Assets";
 
 // --- Number to Words Converter (Indian Numbering System) ---
 const numberToWords = (num: number): string => {
@@ -53,12 +56,12 @@ const InvoiceScreen = () => {
   const isDark = theme === "dark";
   
   // Clean Tax Invoice styling - always highly legible & professional like printed paper
-  const bg = isDark ? "#111111" : "#F5F5F5";
-  const cardBg = isDark ? "#1E1E1E" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F5F5F5";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#A0AEC0" : "#4A5568";
-  const tableHeaderBg = isDark ? "#2D3748" : "#EDF2F7";
-  const gridBorderColor = isDark ? "#4A5568" : "#A0AEC0";
+  const tableHeaderBg = isDark ? "#1E1E1E" : "#EDF2F7";
+  const gridBorderColor = isDark ? "#333333" : "#A0AEC0";
   
   if (!order) {
     return (
@@ -90,6 +93,19 @@ const InvoiceScreen = () => {
   const grandTotal = order.total || 0;
   const invoiceDate = order.date || new Date().toLocaleDateString("en-IN");
   const invoiceNo = `${order.id.slice(-6).toUpperCase()}`;
+
+  const [downloading, setDownloading] = React.useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      await generateBillPDF(order);
+    } catch (err) {
+      Alert.alert("Download Failed", "Could not download the invoice PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -140,7 +156,15 @@ Thank you for doing business with us! 🏆
           <ArrowLeft size={18} color={textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: textPrimary }]}>Tax Invoice View</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <TouchableOpacity
+            onPress={handleDownload}
+            style={[styles.headerBtn, { backgroundColor: isDark ? "#2D3748" : "#F7FAFC" }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            disabled={downloading}
+          >
+            <Download size={18} color="#10B981" />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleShare}
             style={[styles.headerBtn, { backgroundColor: isDark ? "#2D3748" : "#F7FAFC" }]}
@@ -162,14 +186,15 @@ Thank you for doing business with us! 🏆
           
           {/* 1. Header Information Row */}
           <View style={[styles.companyRow, { borderBottomColor: gridBorderColor }]}>
-            <View style={styles.companyLeft}>
+            <View style={styles.logoContainer}>
+              <Image source={{ uri: LOGO_BASE64 }} style={styles.logoImage} resizeMode="contain" />
+            </View>
+            <View style={styles.companyRightDetails}>
               <Text style={[styles.companyName, { color: textPrimary }]}>JAIHIND SPORTS</Text>
               <Text style={[styles.companyDetails, { color: textSecondary }]}>Mettupalayam -TRICHY</Text>
               <Text style={[styles.companyDetails, { color: textSecondary }]}>Phone: <Text style={styles.boldText}>8673450696</Text></Text>
               <Text style={[styles.companyDetails, { color: textSecondary }]}>State: <Text style={styles.boldText}>33-Tamil Nadu</Text></Text>
-            </View>
-            <View style={styles.companyRight}>
-              <Text style={[styles.companyEmail, { color: textSecondary }]}>Email: <Text style={[styles.boldText, { color: textPrimary }]}>sethupathi51469@gmail.com</Text></Text>
+              <Text style={[styles.companyDetails, { color: textSecondary }]}>Email: <Text style={[styles.boldText, { color: textPrimary }]}>sethupathi51469@gmail.com</Text></Text>
             </View>
           </View>
 
@@ -294,7 +319,7 @@ Thank you for doing business with us! 🏆
             <View style={styles.signatureBox}>
               <Text style={[styles.forCompany, { color: textPrimary }]}>For JAIHIND SPORTS:</Text>
               <View style={styles.handwrittenSignBox}>
-                <Text style={styles.stylizedSignature}>S. Sethupathi</Text>
+                <Image source={{ uri: SIGNATURE_BASE64 }} style={styles.signatureImage} resizeMode="contain" />
               </View>
               <Text style={[styles.authLabel, { color: textSecondary }]}>Authorized Signatory</Text>
             </View>
@@ -307,15 +332,29 @@ Thank you for doing business with us! 🏆
           <Text style={[styles.watermarkText, { color: textSecondary }]}>Generated by Jaihind Sports Fit Mobile App</Text>
         </View>
 
-        {/* Share Invoice Action Button */}
-        <TouchableOpacity
-          style={styles.shareBtn}
-          onPress={handleShare}
-          activeOpacity={0.85}
-        >
-          <Share2 size={16} color="#FFFFFF" />
-          <Text style={styles.shareBtnText}>Share Tax Invoice</Text>
-        </TouchableOpacity>
+        {/* Action Buttons Row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.downloadBtn]}
+            onPress={handleDownload}
+            activeOpacity={0.85}
+            disabled={downloading}
+          >
+            <Download size={16} color="#FFFFFF" />
+            <Text style={styles.actionBtnText}>
+              {downloading ? "Generating PDF..." : "Download PDF"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.shareBtn]}
+            onPress={handleShare}
+            activeOpacity={0.85}
+          >
+            <Share2 size={16} color="#FFFFFF" />
+            <Text style={styles.actionBtnText}>Share Invoice</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -374,24 +413,27 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  companyLeft: {
-    flex: 1.2,
+  logoContainer: {
+    width: 120,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  logoImage: {
+    width: "100%",
+    height: 60,
+  },
+  companyRightDetails: {
+    flex: 1.5,
+    alignItems: "flex-end",
   },
   companyName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   companyDetails: {
     fontSize: 11,
-    marginTop: 3,
-  },
-  companyRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  companyEmail: {
-    fontSize: 10.5,
+    marginTop: 2,
     textAlign: "right",
   },
 
@@ -478,7 +520,7 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     paddingLeft: 12,
     justifyContent: "center",
-    height: "100%",
+    alignSelf: "stretch",
   },
   totalSpanText: {
     fontSize: 11,
@@ -492,7 +534,7 @@ const styles = StyleSheet.create({
   totalQtySpanEmpty: {
     width: 125, // covers Hsn, Unit and Price empty blocks
     borderRightWidth: 1,
-    height: "100%",
+    alignSelf: "stretch",
   },
   totalAmountText: {
     fontWeight: "900",
@@ -576,12 +618,9 @@ const styles = StyleSheet.create({
   handwrittenSignBox: {
     paddingVertical: 4,
   },
-  stylizedSignature: {
-    fontFamily: Platform.OS === "ios" ? "Snell Roundhand" : "cursive",
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1E3A8A",
-    transform: [{ rotate: "-4deg" }],
+  signatureImage: {
+    width: 140,
+    height: 48,
   },
   authLabel: {
     fontSize: 9.5,
@@ -606,20 +645,31 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  shareBtn: {
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 6,
+  },
+  actionBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#E11D48",
     paddingVertical: 14,
     borderRadius: 12,
-    marginTop: 6,
-    shadowColor: "#E11D48",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
   },
-  shareBtnText: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },
+  downloadBtn: {
+    backgroundColor: "#10B981", // Emerald Green for Download
+    shadowColor: "#10B981",
+  },
+  shareBtn: {
+    backgroundColor: "#E11D48", // Crimson Rose for Share
+    shadowColor: "#E11D48",
+  },
+  actionBtnText: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },
 });

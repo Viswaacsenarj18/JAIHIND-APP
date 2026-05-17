@@ -13,6 +13,7 @@ export interface CartProduct {
   description:   string;
   inStock:       boolean;
   badge?:        string;
+  selectedSize?:  string | null;
 }
 
 export interface CartItem {

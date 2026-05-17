@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cardDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#111111",
     shadowOpacity: 0.25,
   },
   textWhite: {

@@ -21,8 +21,8 @@ interface FirestoreUser {
 const AdminUsersPage = () => {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F8F8F8";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#F0F0F0";
@@ -156,7 +156,7 @@ const AdminUsersPage = () => {
               <Text style={[styles.meta, { color: isDark ? "#4B5563" : "#9CA3AF" }]}>Joined: {formatDate(item.createdAt)}</Text>
             </View>
             <View style={styles.actions}>
-              <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { backgroundColor: isDark ? "#374151" : "#F3F4F6", marginRight: 6 }]}>
+              <TouchableOpacity onPress={() => setSelected(item)} style={[styles.actionBtn, { backgroundColor: isDark ? "#1E1E1E" : "#F3F4F6", marginRight: 6 }]}>
                 <Eye size={15} color={subTextColor} />
               </TouchableOpacity>
               <TouchableOpacity 

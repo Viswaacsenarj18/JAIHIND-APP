@@ -64,14 +64,14 @@ const ProductDetailScreen = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const bg = isDark ? "#111827" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const imageBg = isDark ? "#1F2937" : "#F3F4F6";
-  const featureBg = isDark ? "#1F2937" : "#EEEEEE";
-  const sizeBg = isDark ? "#1F2937" : "#FFFFFF";
-  const sizeBorder = isDark ? "#374151" : "#E5E5E5";
-  const bottomBarBg = isDark ? "#111827" : "transparent";
+  const imageBg = isDark ? "#111111" : "#F3F4F6";
+  const featureBg = isDark ? "#111111" : "#EEEEEE";
+  const sizeBg = isDark ? "#111111" : "#FFFFFF";
+  const sizeBorder = isDark ? "#222222" : "#E5E5E5";
+  const bottomBarBg = isDark ? "#000000" : "transparent";
   const sizeTextColor = isDark ? "#D1D5DB" : "#4B5563";
 
   // IMAGE CAROUSEL STATE
@@ -129,7 +129,7 @@ const ProductDetailScreen = () => {
         {/* IMAGE CAROUSEL */}
         <View style={styles.imageWrapper}>
           {(() => {
-            const images = product.images?.length ? product.images : (product.image ? [product.image] : ["https://via.placeholder.com/400"]);
+            const images = product.images?.length ? product.images : ["https://via.placeholder.com/400"];
             const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
             const handleScroll = (e: any) => {
@@ -283,7 +283,7 @@ const ProductDetailScreen = () => {
           {/* SIZES */}
           {product.hasSizes && product.sizes && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Size</Text>
+              <Text style={[styles.sectionTitle, { color: textPrimary }]}>Select Size</Text>
               <View style={styles.sizeRow}>
                 {Object.entries(product.sizes).map(([size, qty]) => {
                   const isAvailable = (qty as number) > 0;

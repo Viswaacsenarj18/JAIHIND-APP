@@ -30,7 +30,7 @@ const CategoriesScreen = () => {
   const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const bg = isDark ? "#111827" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#FFFFFF";
   const [searchQuery, setSearchQuery] = useState("");
 
   const NUM_COLUMNS = IS_TABLET ? 3 : 2;
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchBarDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#111111",
   },
   searchInput: {
     flex: 1,

@@ -7,6 +7,7 @@ import { Trash2, Star, User, MessageSquare, Package } from "lucide-react-native"
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useTheme } from "../../context/ThemeContext";
+import { logActivity } from "../../utils/activityLogger";
 
 interface Review {
   id: string;
@@ -22,8 +23,8 @@ interface Review {
 export default function AdminReviewsPage() {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F9FAFB";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F9FAFB";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#E5E7EB";
@@ -52,6 +53,17 @@ export default function AdminReviewsPage() {
       try {
         setDeleting(id);
         await deleteDoc(doc(db, "reviews", id));
+        // Log the deletion action
+        try {
+          await logActivity({
+            type: "review",
+            title: "Review Deleted",
+            subtitle: `Review by "${userName}" was deleted by Admin`,
+            details: { reviewId: id, userName }
+          });
+        } catch (logErr) {
+          console.warn("⚠️ Could not log review deletion:", logErr);
+        }
         if (Platform.OS === 'web') {
            alert("Review deleted successfully");
         } else {
@@ -107,7 +119,7 @@ export default function AdminReviewsPage() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Star size={40} color={isDark ? "#374151" : "#D1D5DB"} />
+            <Star size={40} color={isDark ? "#222222" : "#D1D5DB"} />
             <Text style={[styles.emptyText, { color: subTextColor }]}>No reviews found</Text>
           </View>
         }
@@ -115,7 +127,7 @@ export default function AdminReviewsPage() {
           <View style={[styles.card, { backgroundColor: cardBg }]}>
             <View style={styles.cardHeader}>
               <View style={styles.userBox}>
-                <View style={[styles.avatar, { backgroundColor: isDark ? "#374151" : "#F3F4F6" }]}><User size={14} color={subTextColor} /></View>
+                <View style={[styles.avatar, { backgroundColor: isDark ? "#222222" : "#F3F4F6" }]}><User size={14} color={subTextColor} /></View>
                 <View>
                   <Text style={[styles.userName, { color: textColor }]}>{item.userName}</Text>
                   <Text style={[styles.date, { color: subTextColor }]}>{formatDate(item.createdAt)}</Text>
@@ -123,7 +135,7 @@ export default function AdminReviewsPage() {
               </View>
               <View style={styles.stars}>
                 {[1,2,3,4,5].map(i => (
-                  <Star key={i} size={12} color={i <= item.rating ? "#F59E0B" : (isDark ? "#374151" : "#D1D5DB")} fill={i <= item.rating ? "#F59E0B" : "transparent"} />
+                  <Star key={i} size={12} color={i <= item.rating ? "#F59E0B" : (isDark ? "#222222" : "#D1D5DB")} fill={i <= item.rating ? "#F59E0B" : "transparent"} />
                 ))}
               </View>
             </View>
@@ -133,7 +145,7 @@ export default function AdminReviewsPage() {
             {item.images && item.images.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageStrip}>
                 {item.images.map((img, idx) => (
-                  <Image key={idx} source={{ uri: img }} style={[styles.reviewImage, { backgroundColor: isDark ? "#111827" : "#F3F4F6" }]} />
+                  <Image key={idx} source={{ uri: img }} style={[styles.reviewImage, { backgroundColor: isDark ? "#111111" : "#F3F4F6" }]} />
                 ))}
               </ScrollView>
             )}

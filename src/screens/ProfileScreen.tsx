@@ -251,7 +251,7 @@ const ProfileScreen = () => {
     <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#111827" : "#F8F8F8"}
+        backgroundColor={isDark ? "#000000" : "#F8F8F8"}
       />
       <PageHeader
         title="Profile"
@@ -476,7 +476,7 @@ const ProfileScreen = () => {
             </View>
             {recentOrders.map((order, idx) => {
               const sc = statusColor[order.status] ?? {
-                bg: isDark ? "#374151" : "#F3F4F6",
+                bg: isDark ? "#1E1E1E" : "#F3F4F6",
                 text: "#6B7280",
               };
               return (
@@ -573,7 +573,7 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F8F8F8" },
-  safeDark: { backgroundColor: "#111827" },
+  safeDark: { backgroundColor: "#000000" },
   content: {
     padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 24 : 16,
     gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 18 : 14,
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  guestAvatarDark: { backgroundColor: "#1F2937" },
+  guestAvatarDark: { backgroundColor: "#111111" },
   guestTitle: {
     fontSize: IS_SMALL_SCREEN ? 16 : IS_TABLET ? 24 : 20,
     fontWeight: "800",
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  editBtnDark: { backgroundColor: "#374151" },
+  editBtnDark: { backgroundColor: "#1E1E1E" },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 16,
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: IS_SMALL_SCREEN ? 10 : IS_TABLET ? 16 : 12,
   },
-  cardDark: { backgroundColor: "#1F2937", shadowOpacity: 0.2 },
+  cardDark: { backgroundColor: "#111111", shadowOpacity: 0.2 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: IS_SMALL_SCREEN ? 8 : 10,
   },
-  editProfileBtnDark: { borderColor: "#374151" },
+  editProfileBtnDark: { borderColor: "#222222" },
   editProfileText: {
     fontSize: IS_SMALL_SCREEN ? 12 : 13,
     fontWeight: "600",
@@ -747,8 +747,8 @@ const styles = StyleSheet.create({
     borderColor: "#F0F0F0",
   },
   statCardDark: {
-    backgroundColor: "#1F2937",
-    borderColor: "#374151",
+    backgroundColor: "#111111",
+    borderColor: "#222222",
     shadowOpacity: 0.2,
   },
   statValue: {
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   },
   borderBottomDark: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#374151",
+    borderBottomColor: "#222222",
   },
   orderId: {
     fontSize: IS_SMALL_SCREEN ? 12 : 13,
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  menuIconBoxDark: { backgroundColor: "#374151" },
+  menuIconBoxDark: { backgroundColor: "#1E1E1E" },
   menuLabel: {
     fontSize: IS_SMALL_SCREEN ? 13 : 14,
     fontWeight: "600",
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   modalContentDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#111111",
   },
   modalHeader: {
     flexDirection: "row",
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalOptionDark: {
-    backgroundColor: "#374151",
+    backgroundColor: "#1E1E1E",
   },
   modalOptionText: {
     fontSize: 16,

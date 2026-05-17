@@ -44,8 +44,8 @@ export interface AdminOrder {
 const AdminOrdersPage = () => {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F8F8F8";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#E5E5E5";
@@ -300,7 +300,7 @@ const AdminOrdersPage = () => {
               <>
                 <Text style={[styles.itemsTitle, { color: textColor }]}>Items Ordered:</Text>
                 {selected.items.map((item, idx) => (
-                  <View key={idx} style={[styles.itemRow, { backgroundColor: isDark ? "#374151" : "#F9FAFB" }]}>
+                  <View key={idx} style={[styles.itemRow, { backgroundColor: isDark ? "#1E1E1E" : "#F9FAFB" }]}>
                     <View>
                       <Text style={[styles.itemName, { color: textColor }]}>{item.name}</Text>
                       <Text style={[styles.itemQty, { color: subTextColor }]}>Qty: {item.quantity}</Text>

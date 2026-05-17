@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useTheme } from "../../context/ThemeContext";
+import { logActivity } from "../../utils/activityLogger";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -68,12 +69,12 @@ const BADGE_OPTIONS = [
 export default function AdminProductsPage() {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F9FAFB";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F9FAFB";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#E5E5E5";
-  const inputBg = isDark ? "#222222" : "#F3F4F6";
+  const inputBg = isDark ? "#1E1E1E" : "#F3F4F6";
 
   const [productList, setProductList] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -139,7 +140,7 @@ export default function AdminProductsPage() {
 
       if (!result.canceled && result.assets) {
         setUploading(true);
-        const uploadedUrls = [];
+        const uploadedUrls: string[] = [];
         for (const asset of result.assets) {
           try {
             const url = await uploadImageToCloudinary(asset.uri);
@@ -209,6 +210,17 @@ export default function AdminProductsPage() {
       try {
         setDeleting(id);
         await deleteDoc(doc(db, "products", id));
+        // Log the delete action
+        try {
+          await logActivity({
+            type: "product",
+            title: "Product Deleted",
+            subtitle: `Product "${name}" was deleted by Admin`,
+            details: { productId: id, name }
+          });
+        } catch (logErr) {
+          console.warn("⚠️ Could not log product deletion:", logErr);
+        }
       } catch (error: any) {
         Alert.alert("Error", "Failed to delete product");
       } finally {
@@ -256,14 +268,36 @@ export default function AdminProductsPage() {
 
       if (editingId) {
         await updateDoc(doc(db, "products", editingId), data);
+        // Log the update action
+        try {
+          await logActivity({
+            type: "product",
+            title: "Product Updated",
+            subtitle: `Product "${data.name}" was updated by Admin`,
+            details: { productId: editingId, name: data.name, price: data.price }
+          });
+        } catch (logErr) {
+          console.warn("⚠️ Could not log product update:", logErr);
+        }
         Alert.alert("Success", "Product updated");
       } else {
-        await addDoc(collection(db, "products"), {
+        const docRef = await addDoc(collection(db, "products"), {
           ...data,
           createdAt: serverTimestamp(),
           rating: 0,
           reviews: 0
         });
+        // Log the add action
+        try {
+          await logActivity({
+            type: "product",
+            title: "New Product Added",
+            subtitle: `Product "${data.name}" was added by Admin`,
+            details: { productId: docRef.id, name: data.name, price: data.price }
+          });
+        } catch (logErr) {
+          console.warn("⚠️ Could not log product add:", logErr);
+        }
         Alert.alert("Success", "Product added");
       }
       closeModal();

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet, ViewStyle } from "react-native";
+import { View, Animated, StyleSheet, ViewStyle, StyleProp } from "react-native";
 
 // ─── Base shimmer skeleton block ──────────────────────────────────────────────
-const Skeleton = ({ style }: { style?: ViewStyle }) => {
+const Skeleton = ({ style }: { style?: StyleProp<ViewStyle> }) => {
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {

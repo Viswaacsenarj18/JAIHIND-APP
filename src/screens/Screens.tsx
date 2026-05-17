@@ -260,7 +260,7 @@ export const WishlistScreen = () => {
   const isSmallScreen = screenWidth < 500;
   const gridStyle = [
     sharedStyles.grid,
-    isSmallScreen ? { justifyContent: "center" } : { justifyContent: "flex-start" },
+    isSmallScreen ? { justifyContent: "center" as const } : { justifyContent: "flex-start" as const },
   ];
 
   if (items.length === 0) {
@@ -279,7 +279,7 @@ export const WishlistScreen = () => {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <View style={gridStyle}>
           {items.map((p) => (
-            <ProductCard key={p.id} product={{ ...p, images: p.images || (p.image ? [p.image] : []) }} />
+            <ProductCard key={p.id} product={{ ...p, images: p.images || [] }} />
           ))}
         </View>
       </ScrollView>

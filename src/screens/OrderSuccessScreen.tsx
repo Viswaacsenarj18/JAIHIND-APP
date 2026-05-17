@@ -35,10 +35,10 @@ const OrderSuccessScreen = () => {
     }
   };
 
-  const bg = isDark ? "#111827" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E5E5";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
   const outlineTextColor = isDark ? "#FFFFFF" : "#333333";
 
   return (

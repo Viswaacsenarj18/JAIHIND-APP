@@ -29,16 +29,16 @@ const HomePage = () => {
   const { products, categories } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
-  
   const isDark = theme === "dark";
-  const bg = isDark ? "#111111" : "#F8F8F8";
+  
+  const bg = isDark ? "#000000" : "#F8F8F8";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
 
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
+    if (hour < 16) return "Good Afternoon";
     return "Good Evening";
   };
 
@@ -99,7 +99,7 @@ const HomePage = () => {
               <TouchableOpacity 
                 key={cat.id} 
                 style={[styles.emojiCircle, { backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF" }]}
-                onPress={() => navigation.navigate("CategoryDetail" as never, { categoryId: cat.id })}
+                onPress={() => (navigation as any).navigate("CategoryDetail", { categoryId: cat.id })}
               >
                 <Text style={styles.emojiText}>{cat.icon}</Text>
               </TouchableOpacity>

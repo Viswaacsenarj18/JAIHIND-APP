@@ -49,7 +49,7 @@ const CategoryCard = ({ category, onPress = () => {} }: CategoryCardProps) => {
       bounciness: 4,
     }).start();
 
-  const onCardPress = onPress || (() => navigation.navigate("CategoryDetail" as never, { categoryId: category.id })); 
+  const onCardPress = onPress || (() => (navigation as any).navigate("CategoryDetail", { categoryId: category.id })); 
 
   return (
     <Animated.View
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   wrapperDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#111111",
   },
   touchable: {
     flex: 1,

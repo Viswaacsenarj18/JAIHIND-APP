@@ -24,8 +24,8 @@ import {
 import { db } from "../../firebaseConfig";
 import { uploadImageToCloudinary } from "../../services/cloudinary";
 import ModalForm from "../../components/admin/ModalForm";
-
 import { useTheme } from "../../context/ThemeContext";
+import { logActivity } from "../../utils/activityLogger";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_TABLET = SCREEN_WIDTH >= 768;
@@ -44,12 +44,12 @@ interface Category {
 const AdminCategoriesPage = () => {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F8F8F8";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F8F8F8";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textColor = isDark ? "#FFFFFF" : "#111111";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#222222" : "#E5E5E5";
-  const inputBg = isDark ? "#222222" : "#F3F4F6";
+  const inputBg = isDark ? "#1E1E1E" : "#F3F4F6";
 
   const [catList, setCatList] = useState<Category[]>([]);
   const [productCounts, setProductCounts] = useState<Record<string, number>>({});
@@ -214,6 +214,18 @@ const AdminCategoriesPage = () => {
       });
       console.log(`✅ Category document updated successfully`);
 
+      // Log the update action
+      try {
+        await logActivity({
+          type: "category",
+          title: "Category Updated",
+          subtitle: `Category "${form.name.trim()}" (formerly "${oldCategory?.name}") was updated by Admin`,
+          details: { categoryId: editingId, oldName: oldCategory?.name, newName: form.name.trim() }
+        });
+      } catch (logErr) {
+        console.warn("⚠️ Could not log category update:", logErr);
+      }
+
       // CASCADE UPDATE: Update all products referencing this category
       const productsQuery = query(
         collection(db, "products"),
@@ -280,6 +292,19 @@ const AdminCategoriesPage = () => {
       });
       
       console.log(`✅ Category added successfully with ID: ${docRef.id}`);
+
+      // Log the add action
+      try {
+        await logActivity({
+          type: "category",
+          title: "New Category Created",
+          subtitle: `Category "${form.name.trim()}" was created by Admin`,
+          details: { categoryId: docRef.id, name: form.name.trim() }
+        });
+      } catch (logErr) {
+        console.warn("⚠️ Could not log category creation:", logErr);
+      }
+
       Alert.alert("Success", "Category added successfully");
       return true;
     } catch (error: any) {
@@ -332,6 +357,18 @@ const AdminCategoriesPage = () => {
 
       console.log("✅ CATEGORY DELETED SUCCESSFULLY");
 
+      // Log the delete action
+      try {
+        await logActivity({
+          type: "category",
+          title: "Category Deleted",
+          subtitle: `Category "${name}" was deleted by Admin`,
+          details: { categoryId, name }
+        });
+      } catch (logErr) {
+        console.warn("⚠️ Could not log category deletion:", logErr);
+      }
+
       if (Platform.OS === 'web') {
         if (typeof window !== 'undefined') window.alert("Category deleted");
       } else {
@@ -383,7 +420,7 @@ const AdminCategoriesPage = () => {
 
   const CategoryCard = ({ item }: { item: Category }) => (
     <View style={[styles.card, { width: cardWidth, maxWidth: cardWidth, backgroundColor: cardBg }]}>
-      <View style={styles.imageWrapper}>
+      <View style={[styles.imageWrapper, { backgroundColor: isDark ? "#1E1E1E" : "#F3F4F6" }]}>
         <Image source={{ uri: item.image }} style={styles.image} resizeMode="contain" />
         <View style={styles.overlay}>
           <TouchableOpacity 

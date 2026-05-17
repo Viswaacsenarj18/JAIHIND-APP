@@ -31,9 +31,9 @@ interface RecentOrder {
 const AdminDashboardPage = () => {
   const { adminTheme } = useTheme();
   const isDark = adminTheme === "dark";
-  const bg = isDark ? "#111111" : "#F9FAFB";
+  const bg = isDark ? "#000000" : "#F9FAFB";
   const textColor = isDark ? "#FFFFFF" : "#111111";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const borderColor = isDark ? "#222222" : "#E5E5E5";
   const subTextColor = isDark ? "#9CA3AF" : "#6B7280";
 

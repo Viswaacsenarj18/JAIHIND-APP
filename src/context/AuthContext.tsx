@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: firebaseUser.email || '',
               phone: data?.phone,
               address: data?.address,
-              avatarUrl: data?.avatarUrl,
+              avatarUrl: data?.avatarUrl || data?.photoURL || firebaseUser.photoURL || '',
               role: data?.role || 'user',
             });
           } else {
@@ -203,8 +203,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     let finalAvatarUrl = avatarUrl;
 
-    // If it's a local URI, upload it to Cloudinary (Faster than Firebase Storage in some environments)
-    if (avatarUrl && (avatarUrl.startsWith('file://') || avatarUrl.startsWith('content://') || avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:'))) {
+    // 🔥 FIX: Check if it's a local URI (does not start with http/https). This handles ph://, file://, etc. on iOS and Android.
+    if (avatarUrl && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://')) {
       try {
         console.log("☁️ Starting Cloudinary upload for profile...");
         finalAvatarUrl = await uploadImageToCloudinary(avatarUrl);
@@ -212,7 +212,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (err: any) {
         console.error("❌ Profile upload failed:", err.message);
         // Fallback or alert user, but we'll try to continue with other fields if needed
-        // For now, let's throw to ensure "full working"
         throw new Error("Failed to upload image to Cloudinary: " + err.message);
       }
     }
@@ -252,7 +251,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,
