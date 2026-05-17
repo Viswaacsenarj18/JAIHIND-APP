@@ -65,16 +65,24 @@ const AdminDashboardPage = () => {
       setLoading(false);
     });
 
-    const recentQ = query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(5));
-    const recentUnsub = onSnapshot(recentQ, (snap) => {
+    const recentUnsub = onSnapshot(collection(db, "orders"), (snap) => {
       if (!isMounted) return;
-      const orders = snap.docs.map(doc => ({
+      const orderList = snap.docs.map(doc => ({
         id: doc.id,
         customerName: doc.data().name || "Guest",
         amount: doc.data().total || 0,
         status: doc.data().status || "pending",
+        createdAt: doc.data().createdAt,
       }));
-      setRecentOrders(orders);
+
+      // Sort in memory to avoid needing custom Firestore indexes
+      const sorted = orderList.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      }).slice(0, 5);
+
+      setRecentOrders(sorted);
     });
 
     return () => {

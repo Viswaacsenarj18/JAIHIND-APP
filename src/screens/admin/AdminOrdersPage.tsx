@@ -57,7 +57,7 @@ const AdminOrdersPage = () => {
 
   // 🔥 REAL-TIME FIRESTORE SYNC
   useEffect(() => {
-    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "orders"));
     const unsub = onSnapshot(q,
       (snapshot) => {
         const orderList: AdminOrder[] = snapshot.docs.map(docItem => ({
@@ -73,7 +73,15 @@ const AdminOrdersPage = () => {
           date: docItem.data().date || new Date().toLocaleDateString(),
           createdAt: docItem.data().createdAt,
         }));
-        setOrders(orderList);
+
+        // Sort in memory to avoid needing custom Firestore indexes
+        const sortedOrders = orderList.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+
+        setOrders(sortedOrders);
         setLoading(false);
       },
       (error) => {
