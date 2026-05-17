@@ -71,7 +71,7 @@ const AdminHistoryPage = () => {
 
   // Listen to activities collection (all activity logs)
   useEffect(() => {
-    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "activities"));
     
     const unsub = onSnapshot(q, (snap) => {
       const logs: HistoryItem[] = snap.docs.map(d => ({
@@ -101,7 +101,7 @@ const AdminHistoryPage = () => {
 
   // Listen to order_history collection (deleted orders backup)
   useEffect(() => {
-    const q = query(collection(db, "order_history"), orderBy("deletedAt", "desc"));
+    const q = query(collection(db, "order_history"));
     
     const unsub = onSnapshot(q, (snap) => {
       const logs: HistoryItem[] = snap.docs.map(d => {
