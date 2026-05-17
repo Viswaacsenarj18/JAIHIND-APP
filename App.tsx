@@ -63,6 +63,7 @@ import OrdersScreen from "./src/screens/OrdersScreen";
 import NotificationsScreen from "./src/screens/NotificationsScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import NotFoundScreen from "./src/screens/NotFoundScreen";
+import InvoiceScreen from "./src/screens/InvoiceScreen";
 import { Text } from "react-native";
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -162,10 +163,10 @@ function UserTabs() {
           tabBarInactiveTintColor: isDark ? "#9CA3AF" : "#6B7280",
           tabBarStyle: {
             borderTopWidth: 1,
-            borderTopColor: isDark ? "#1F2937" : "#E5E7EB",
+            borderTopColor: isDark ? "#222222" : "#E5E7EB",
             paddingBottom: Platform.OS === "android" ? 8 : 0,
             height: Platform.OS === "android" ? 56 : 60,
-            backgroundColor: isDark ? "#111827" : "#FFFFFF",
+            backgroundColor: isDark ? "#111111" : "#FFFFFF",
           },
           tabBarLabelStyle: {
             fontSize: 11,
@@ -242,8 +243,8 @@ const AppContent = () => {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      background: isDark ? "#111827" : "#F8F8F8",
-      card: isDark ? "#111827" : "#FFFFFF",
+    background: isDark ? "#111111" : "#F8F8F8",
+    card: isDark ? "#111111" : "#FFFFFF",
       text: isDark ? "#FFFFFF" : "#111111",
     },
   };
@@ -273,6 +274,7 @@ const AppContent = () => {
         <Stack.Screen name="Orders" component={OrdersScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Invoice" component={InvoiceScreen} />
         <Stack.Screen name="NotFound" component={NotFoundScreen} />
       </Stack.Navigator>
     </NavigationContainer>

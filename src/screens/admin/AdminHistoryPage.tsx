@@ -60,6 +60,7 @@ const AdminHistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const listenersReady = React.useRef({ activities: false, orderHistory: false });
 
   const isDark = adminTheme === "dark";
   const bg = isDark ? "#111111" : "#F9FAFB";
@@ -226,6 +227,7 @@ const AdminHistoryPage = () => {
           { key: "order", label: "Orders", icon: ShoppingBag },
           { key: "product", label: "Products", icon: Package },
           { key: "category", label: "Categories", icon: Grid3x3 },
+          { key: "notification", label: "Notifications", icon: Bell },
         ].map((filter) => {
           const isActive = filterType === filter.key;
           return (

@@ -1,20 +1,23 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from "react-native";
+import {
+  View, Text, TouchableOpacity, ScrollView,
+  StyleSheet, StatusBar, Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Package, Trash2, Download } from "lucide-react-native";
+import { Package, Trash2, FileText, Clock, CheckCircle, Truck, XCircle } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import PageHeader from "../components/PageHeader";
 import { useOrders, Order } from "../context/OrderContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { generateBillPDF } from "../utils/billGenerator";
 
-const statusColors: Record<string, { bg: string; text: string }> = {
-  pending: { bg: "rgba(245,158,11,0.12)", text: "#D97706" },
-  processing: { bg: "rgba(225,29,72,0.10)", text: "#E11D48" },
-  delivered: { bg: "rgba(22,163,74,0.10)", text: "#16A34A" },
-  cancelled: { bg: "rgba(107,114,128,0.12)", text: "#6B7280" },
+
+const statusConfig: Record<string, { bg: string; text: string; icon: any; label: string }> = {
+  pending:    { bg: "rgba(245,158,11,0.15)",  text: "#D97706", icon: Clock,        label: "Pending"    },
+  processing: { bg: "rgba(59,130,246,0.15)",  text: "#2563EB", icon: Truck,        label: "Processing" },
+  delivered:  { bg: "rgba(22,163,74,0.15)",   text: "#16A34A", icon: CheckCircle,  label: "Delivered"  },
+  cancelled:  { bg: "rgba(107,114,128,0.15)", text: "#6B7280", icon: XCircle,      label: "Cancelled"  },
 };
 
 const OrdersScreen = () => {
@@ -24,28 +27,53 @@ const OrdersScreen = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const bg = isDark ? "#111827" : "#F8F8F8";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const bg          = isDark ? "#111111" : "#F8F8F8";
+  const cardBg      = isDark ? "#1A1A1A" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const iconBg = isDark ? "#374151" : "#F3F4F6";
+  const borderColor = isDark ? "#222222" : "#E5E7EB";
+  const iconBg      = isDark ? "#222222" : "#F3F4F6";
 
-  const handleCancelOrder = (orderId: string) => { updateOrderStatus(orderId, "cancelled"); };
-  const handleDeleteOrder = (orderId: string) => { deleteOrder(orderId); };
-  const handleDownloadBill = async (order: Order) => {
-    try {
-      await generateBillPDF(order);
-    } catch (error) {
-      console.error("Bill download error:", error);
-    }
+  // Only show this user's orders (not admin orders — admin has its own panel)
+  const myOrders = orders.filter((o) => o.userId === user?.id);
+
+  const handleCancel = (order: Order) => {
+    Alert.alert(
+      "Cancel Order",
+      `Are you sure you want to cancel order #${order.id.slice(-6)}?`,
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: () => updateOrderStatus(order.id, "cancelled"),
+        },
+      ]
+    );
   };
-  const myOrders = user?.role === 'admin' ? orders : orders.filter((o) => o.userId === user?.id);
+
+  const handleDelete = (orderId: string) => {
+    Alert.alert(
+      "Delete Order",
+      "Remove this cancelled order from your history?",
+      [
+        { text: "No", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteOrder(orderId) },
+      ]
+    );
+  };
+
+  const openInvoice = (order: Order) => {
+    navigation.navigate("Invoice", { order });
+  };
 
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <PageHeader title="My Orders" />
-        <View style={styles.center}><Text style={{ color: textSecondary }}>Loading orders...</Text></View>
+        <View style={styles.center}>
+          <Text style={{ color: textSecondary }}>Loading orders...</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -56,11 +84,15 @@ const OrdersScreen = () => {
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
         <PageHeader title="My Orders" />
         <View style={styles.empty}>
-          <View style={[styles.emptyIcon, { backgroundColor: iconBg }]}><Package size={32} color="#9CA3AF" /></View>
+          <View style={[styles.emptyIcon, { backgroundColor: iconBg }]}>
+            <Package size={32} color="#9CA3AF" />
+          </View>
           <Text style={[styles.emptyTitle, { color: textPrimary }]}>No orders yet</Text>
           <Text style={[styles.emptySub, { color: textSecondary }]}>Place your first order to see it here</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Tabs")} activeOpacity={0.88}>
-            <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.emptyBtn}><Text style={styles.emptyBtnText}>Start Shopping</Text></LinearGradient>
+            <LinearGradient colors={["#E11D48", "#9F1239"]} style={styles.emptyBtn}>
+              <Text style={styles.emptyBtnText}>Start Shopping</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -70,62 +102,86 @@ const OrdersScreen = () => {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={bg} />
-      <PageHeader title="My Orders" />
+      <PageHeader title={`My Orders (${myOrders.length})`} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {myOrders.map((order) => {
-          const sc = statusColors[order.status] ?? { bg: isDark ? "#374151" : "#F3F4F6", text: "#6B7280" };
+          const sc = statusConfig[order.status] ?? statusConfig.pending;
+          const StatusIcon = sc.icon;
+          const lineItems = order.items || [];
           return (
-            <View key={order.id} style={[styles.card, { backgroundColor: cardBg }]}>
+            <View key={order.id} style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+              {/* Top Row */}
               <View style={styles.topRow}>
-                <Text style={[styles.orderId, { color: textSecondary }]}>#{order.id.slice(-6)}</Text>
+                <View style={styles.orderIdRow}>
+                  <Text style={[styles.orderId, { color: textSecondary }]}>Order </Text>
+                  <Text style={[styles.orderIdBold, { color: textPrimary }]}>#{order.id.slice(-6).toUpperCase()}</Text>
+                </View>
                 <View style={[styles.badge, { backgroundColor: sc.bg }]}>
-                  <Text style={[styles.badgeText, { color: sc.text }]}>{order.status}</Text>
+                  <StatusIcon size={11} color={sc.text} />
+                  <Text style={[styles.badgeText, { color: sc.text }]}>{sc.label}</Text>
                 </View>
               </View>
+
+              {/* Items preview */}
+              {lineItems.length > 0 && (
+                <View style={[styles.itemsPreview, { borderTopColor: borderColor, borderBottomColor: borderColor }]}>
+                  {lineItems.slice(0, 2).map((item, idx) => (
+                    <Text key={idx} style={[styles.itemPreviewText, { color: textSecondary }]} numberOfLines={1}>
+                      • {item.product?.name || "Product"} × {item.quantity}
+                    </Text>
+                  ))}
+                  {lineItems.length > 2 && (
+                    <Text style={[styles.itemPreviewText, { color: textSecondary }]}>
+                      + {lineItems.length - 2} more item{lineItems.length - 2 > 1 ? "s" : ""}
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* Bottom Row */}
               <View style={styles.bottomRow}>
                 <View>
-                  <Text style={[styles.itemCount, { color: textPrimary }]}>{order.items.length} item{order.items.length > 1 ? "s" : ""}</Text>
+                  <Text style={[styles.total, { color: textPrimary }]}>₹{order.total.toLocaleString("en-IN")}</Text>
                   <Text style={[styles.date, { color: textSecondary }]}>{order.date}</Text>
                 </View>
-                <View style={{ alignItems: "flex-end", gap: 6 }}>
-                  <Text style={[styles.total, { color: textPrimary }]}>Rs.{order.total.toLocaleString("en-IN")}</Text>
-                  
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TouchableOpacity 
-                      onPress={() => handleDownloadBill(order)}
-                      style={{ 
-                        paddingHorizontal: 10, 
-                        paddingVertical: 4, 
-                        borderRadius: 6, 
-                        backgroundColor: isDark ? "rgba(59,130,246,0.2)" : "#DBEAFE",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4
-                      }}
-                    >
-                      <Download size={12} color="#2563EB" />
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#2563EB" }}>Bill</Text>
-                    </TouchableOpacity>
 
-                    {order.status === "pending" && (
-                      <TouchableOpacity onPress={() => handleCancelOrder(order.id)}
-                        style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2" }}>
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Cancel</Text>
-                      </TouchableOpacity>
-                    )}
-                    {order.status === "cancelled" && (
-                      <TouchableOpacity onPress={() => handleDeleteOrder(order.id)}
-                        style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2", flexDirection: "row", alignItems: "center", gap: 4 }}>
-                        <Trash2 size={12} color="#DC2626" />
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: "#DC2626" }}>Delete</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                <View style={styles.actions}>
+                  {/* View Invoice */}
+                  <TouchableOpacity
+                    onPress={() => openInvoice(order)}
+                    style={[styles.actionBtn, { backgroundColor: isDark ? "rgba(225,29,72,0.15)" : "#FEE2E2" }]}
+                  >
+                    <FileText size={13} color="#E11D48" />
+                    <Text style={[styles.actionBtnText, { color: "#E11D48" }]}>Invoice</Text>
+                  </TouchableOpacity>
+
+                  {/* Cancel if pending */}
+                  {order.status === "pending" && (
+                    <TouchableOpacity
+                      onPress={() => handleCancel(order)}
+                      style={[styles.actionBtn, { backgroundColor: isDark ? "rgba(239,68,68,0.12)" : "#FEE2E2" }]}
+                    >
+                      <XCircle size={13} color="#DC2626" />
+                      <Text style={[styles.actionBtnText, { color: "#DC2626" }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Delete if cancelled */}
+                  {order.status === "cancelled" && (
+                    <TouchableOpacity
+                      onPress={() => handleDelete(order.id)}
+                      style={[styles.actionBtn, { backgroundColor: isDark ? "rgba(107,114,128,0.12)" : "#F3F4F6" }]}
+                    >
+                      <Trash2 size={13} color="#6B7280" />
+                      <Text style={[styles.actionBtnText, { color: "#6B7280" }]}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </View>
           );
         })}
+        <View style={{ height: 16 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -136,16 +192,36 @@ export default OrdersScreen;
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
-  card: { borderRadius: 14, padding: 14, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  orderId: { fontSize: 12 },
-  badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
-  badgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  content: { padding: 16, gap: 12 },
+
+  card: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  orderIdRow: { flexDirection: "row", alignItems: "center" },
+  orderId: { fontSize: 12, fontWeight: "500" },
+  orderIdBold: { fontSize: 13, fontWeight: "800" },
+  badge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeText: { fontSize: 11, fontWeight: "700" },
+
+  itemsPreview: { borderTopWidth: 1, borderBottomWidth: 1, paddingVertical: 8, marginBottom: 10, gap: 3 },
+  itemPreviewText: { fontSize: 11, fontWeight: "500" },
+
   bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  itemCount: { fontSize: 13, fontWeight: "600" },
+  total: { fontSize: 16, fontWeight: "900" },
   date: { fontSize: 11, marginTop: 2 },
-  total: { fontSize: 14, fontWeight: "800" },
+
+  actions: { flexDirection: "row", gap: 8 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  actionBtnText: { fontSize: 11, fontWeight: "700" },
+
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 14 },
   emptyIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
   emptyTitle: { fontSize: 18, fontWeight: "800" },

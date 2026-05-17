@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Search, ShoppingCart, Bell } from "lucide-react-native";
+import { Search, ShoppingCart, Bell, Moon, Sun } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 // react-native-linear-gradient users swap above for:
 // import LinearGradient from "react-native-linear-gradient";
@@ -36,7 +36,7 @@ const AppHeader = () => {
   const navigation = useNavigation<NavProp>();
   const { totalItems } = useCart();
   const { user } = useAuth();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = React.useState(0);
 
   React.useEffect(() => {
@@ -56,10 +56,10 @@ const AppHeader = () => {
   }, [user]);
 
   const isDark = theme === "dark";
-  const headerBg = isDark ? "#111827" : "#FFFFFF";
-  const borderColor = isDark ? "#1F2937" : "#E5E5E5";
+  const headerBg = isDark ? "#111111" : "#FFFFFF";
+  const borderColor = isDark ? "#222222" : "#E5E5E5";
   const iconColor = isDark ? "#D1D5DB" : "#555555";
-  const iconBg = isDark ? "#1F2937" : "#F3F4F6";
+  const iconBg = isDark ? "#1A1A1A" : "#F3F4F6";
   const textColor = isDark ? "#FFFFFF" : "#111111";
 
   return (
@@ -82,6 +82,10 @@ const AppHeader = () => {
       <View style={styles.actions}>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Search")} activeOpacity={0.75}>
           <Search size={18} color={iconColor} />
+        </TouchableOpacity>
+        {/* Dark Mode Toggle */}
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={toggleTheme} activeOpacity={0.75}>
+          {isDark ? <Sun size={18} color="#FBBF24" /> : <Moon size={18} color={iconColor} />}
         </TouchableOpacity>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: iconBg }]} onPress={() => navigation.navigate("Cart")} activeOpacity={0.75}>
           <ShoppingCart size={18} color="#E11D48" />

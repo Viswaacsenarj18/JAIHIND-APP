@@ -31,7 +31,7 @@ const HomePage = () => {
   const { theme } = useTheme();
   
   const isDark = theme === "dark";
-  const bg = isDark ? "#111827" : "#F8F8F8";
+  const bg = isDark ? "#111111" : "#F8F8F8";
   const textPrimary = isDark ? "#FFFFFF" : "#111111";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
 
@@ -93,14 +93,12 @@ const HomePage = () => {
 
         {/* Category Emojis (Quick Access) */}
         <View style={[styles.section, { marginBottom: 24 }]}>
-          <Text style={[styles.sectionTitle, { color: textPrimary }]}>
-            Quick Shop ⚡
-          </Text>
+        
           <View style={styles.emojiRow}>
             {categories.slice(0, 8).map((cat) => (
               <TouchableOpacity 
                 key={cat.id} 
-                style={[styles.emojiCircle, { backgroundColor: isDark ? "#1F2937" : "#FFFFFF" }]}
+                style={[styles.emojiCircle, { backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF" }]}
                 onPress={() => navigation.navigate("CategoryDetail" as never, { categoryId: cat.id })}
               >
                 <Text style={styles.emojiText}>{cat.icon}</Text>

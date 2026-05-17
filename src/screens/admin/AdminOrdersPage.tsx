@@ -108,6 +108,24 @@ const AdminOrdersPage = () => {
         subtitle: `Status changed to "${newStatus}" — Customer: ${order?.name || "Unknown"} — ₹${order?.total?.toLocaleString("en-IN") || 0}`,
       });
 
+      // Create notification for the user
+      if (order?.userId) {
+        try {
+          await addDoc(collection(db, "notifications"), {
+            recipientId: order.userId,
+            type: "status",
+            title: "Order Update",
+            message: `Your order #${orderId.slice(-6).toUpperCase()} status has been updated to "${newStatus.toUpperCase()}"`,
+            orderId: orderId,
+            isRead: false,
+            createdAt: serverTimestamp(),
+          });
+          console.log(`🔔 Saved real-time notification to user ${order.userId} for status: ${newStatus}`);
+        } catch (notifErr) {
+          console.warn("⚠️ Could not create user notification:", notifErr);
+        }
+      }
+
       setSelected(null);
       Alert.alert("Success", `Order status updated to ${newStatus}`);
     } catch (error: any) {
