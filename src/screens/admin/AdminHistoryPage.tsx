@@ -57,6 +57,7 @@ const AdminHistoryPage = () => {
   const { adminTheme } = useTheme();
   const [activityLogs, setActivityLogs] = useState<HistoryItem[]>([]);
   const [orderHistoryLogs, setOrderHistoryLogs] = useState<HistoryItem[]>([]);
+  const [ordersLogs, setOrdersLogs] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -128,8 +129,38 @@ const AdminHistoryPage = () => {
     return () => unsub();
   }, []);
 
+  // Listen to orders collection (active live orders)
+  useEffect(() => {
+    const q = query(collection(db, "orders"));
+    
+    const unsub = onSnapshot(q, (snap) => {
+      const logs: HistoryItem[] = snap.docs.map(d => {
+        const data = d.data();
+        const statusLabel = data.status || "pending";
+        return {
+          id: `active_order_${d.id}`,
+          source: "activity" as const,
+          type: "order" as const,
+          title: `Order #${d.id.slice(-6).toUpperCase()} Placed`,
+          subtitle: `Customer: ${data.name || "Guest"} | Phone: ${data.phone || "N/A"} | ₹${data.total?.toLocaleString("en-IN") || 0} | Status: ${statusLabel.toUpperCase()}`,
+          timestamp: data.createdAt || data.date,
+          details: data,
+          icon: ShoppingBag,
+          color: statusLabel === "cancelled" ? "#EF4444" : statusLabel === "delivered" ? "#10B981" : "#E11D48",
+        };
+      });
+      
+      setOrdersLogs(logs);
+      console.log(`📋 Active orders logs loaded: ${logs.length}`);
+    }, (err) => {
+      console.error("Orders log fetch error:", err);
+    });
+
+    return () => unsub();
+  }, []);
+
   // Combine and sort all history
-  const allHistory = [...activityLogs, ...orderHistoryLogs].sort((a, b) => {
+  const allHistory = [...activityLogs, ...orderHistoryLogs, ...ordersLogs].sort((a, b) => {
     const getTime = (ts: any) => {
       if (!ts) return 0;
       try {
