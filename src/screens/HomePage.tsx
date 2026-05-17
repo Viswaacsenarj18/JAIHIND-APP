@@ -23,6 +23,11 @@ import { useTheme } from "../context/ThemeContext";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = SCREEN_WIDTH < 375 ? 12 : 16;
 
+// Responsive category dimensions (simulated media queries)
+const CARD_SIZE = SCREEN_WIDTH < 360 ? 60 : SCREEN_WIDTH < 412 ? 72 : 80;
+const EMOJI_SIZE = SCREEN_WIDTH < 360 ? 26 : SCREEN_WIDTH < 412 ? 32 : 36;
+const NAME_FONT_SIZE = SCREEN_WIDTH < 360 ? 10.5 : SCREEN_WIDTH < 412 ? 11.5 : 12.5;
+
 const HomePage = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -93,15 +98,20 @@ const HomePage = () => {
 
         {/* Category Emojis (Quick Access) */}
         <View style={[styles.section, { marginBottom: 24 }]}>
-        
           <View style={styles.emojiRow}>
             {categories.slice(0, 8).map((cat) => (
               <TouchableOpacity 
                 key={cat.id} 
-                style={[styles.emojiCircle, { backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF" }]}
+                style={styles.categoryItem}
+                activeOpacity={0.7}
                 onPress={() => (navigation as any).navigate("CategoryDetail", { categoryId: cat.id })}
               >
-                <Text style={styles.emojiText}>{cat.icon}</Text>
+                <View style={[styles.emojiCircle, { backgroundColor: isDark ? "#111111" : "#FFFFFF", borderColor: isDark ? "#222222" : "#E5E7EB" }]}>
+                  <Text style={styles.emojiText}>{cat.icon}</Text>
+                </View>
+                <Text style={[styles.categoryNameText, { color: textPrimary }]} numberOfLines={1}>
+                  {cat.name}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -161,13 +171,18 @@ const styles = StyleSheet.create({
   emojiRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "flex-start",
     gap: 12,
   },
-  emojiCircle: {
+  categoryItem: {
     width: (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 36) / 4,
-    height: (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 36) / 4,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  emojiCircle: {
+    width: CARD_SIZE,
+    height: CARD_SIZE,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -175,9 +190,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
   },
   emojiText: {
-    fontSize: 24,
+    fontSize: EMOJI_SIZE,
+  },
+  categoryNameText: {
+    fontSize: NAME_FONT_SIZE,
+    fontWeight: "800",
+    marginTop: 8,
+    textAlign: "center",
+    letterSpacing: 0.2,
   },
   productsGrid: {
     flexDirection: "row",
